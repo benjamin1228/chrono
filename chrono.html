@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chrono">
+<title>Chrono</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08080c;
+    --surface: rgba(255,255,255,0.04);
+    --surface-border: rgba(255,255,255,0.06);
+    --accent: #6ee7b7;
+    --accent2: #34d399;
+    --accent-soft: rgba(110,231,183,0.08);
+    --accent-glow: rgba(110,231,183,0.25);
+    --stop-color: #fb7185;
+    --stop-soft: rgba(251,113,133,0.08);
+    --stop-glow: rgba(251,113,133,0.25);
+    --white: #f1f5f9;
+    --gray: #94a3b8;
+    --gray-dim: #475569;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--white);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  .orb { position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0.12; pointer-events: none; z-index: 0; }
+  .orb-1 { width: 400px; height: 400px; background: var(--accent); top: -100px; left: -100px; animation: oF1 12s ease-in-out infinite; }
+  .orb-2 { width: 300px; height: 300px; background: #818cf8; bottom: 10%; right: -80px; animation: oF2 15s ease-in-out infinite; }
+  .orb-3 { width: 250px; height: 250px; background: var(--stop-color); top: 40%; left: 50%; transform: translateX(-50%); animation: oF3 18s ease-in-out infinite; opacity: 0.06; }
+
+  @keyframes oF1 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(60px,40px) scale(1.1)} 66%{transform:translate(-30px,80px) scale(.95)} }
+  @keyframes oF2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-50px,-60px) scale(1.15)} }
+  @keyframes oF3 { 0%,100%{transform:translateX(-50%) scale(1);opacity:.06} 50%{transform:translateX(-30%) scale(1.2);opacity:.1} }
+
+  body::after {
+    content:''; position:fixed; inset:0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:1;
+  }
+
+  .app {
+    position:relative; z-index:2; width:100%; max-width:420px;
+    padding: calc(env(safe-area-inset-top,20px) + 16px) 24px 40px;
+    display:flex; flex-direction:column; align-items:center; min-height:100dvh;
+  }
+
+  .header { width:100%; display:flex; justify-content:space-between; align-items:baseline; margin-bottom:36px; }
+  .logo { font-size:15px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:var(--gray); }
+  .logo span { color:var(--accent); }
+  .date-pill { font-size:12px; color:var(--gray-dim); background:var(--surface); border:1px solid var(--surface-border); padding:6px 14px; border-radius:100px; backdrop-filter:blur(10px); }
+
+  .timer-area { display:flex; flex-direction:column; align-items:center; margin-bottom:36px; }
+
+  .ring-wrapper { position:relative; width:272px; height:272px; display:flex; align-items:center; justify-content:center; }
+  .ring-svg { position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-track { fill:none; stroke:var(--surface-border); stroke-width:2; }
+  .ring-progress { fill:none; stroke:url(#ringGrad); stroke-width:3; stroke-linecap:round; stroke-dasharray:830; stroke-dashoffset:830; transition: stroke-dashoffset 0.15s linear; }
+
+  .ring-glow {
+    position:absolute; inset:10px; border-radius:50%; opacity:0; transition:opacity .6s ease;
+    background:radial-gradient(circle, var(--accent-soft) 0%, transparent 70%);
+  }
+  .ring-wrapper.running .ring-glow { opacity:1; animation: glowP 3s ease-in-out infinite; }
+  @keyframes glowP { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
+
+  .timer-content { position:relative; z-index:2; text-align:center; }
+  .timer-digits { font-family:'JetBrains Mono',monospace; font-size:52px; font-weight:300; letter-spacing:3px; color:var(--white); line-height:1; }
+  .timer-cents { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:300; color:var(--gray-dim); margin-top:2px; letter-spacing:2px; }
+  .timer-label { margin-top:10px; font-size:11px; font-weight:400; text-transform:uppercase; letter-spacing:3px; color:var(--gray-dim); transition:color .4s; }
+  .ring-wrapper.running .timer-label { color:var(--accent2); }
+
+  .btn-main {
+    margin-top:32px; width:200px; height:58px; border:none; border-radius:29px;
+    font-family:'Outfit',sans-serif; font-size:15px; font-weight:500; letter-spacing:3px;
+    text-transform:uppercase; cursor:pointer; transition: all .4s cubic-bezier(.16,1,.3,1);
+  }
+  .btn-main:active { transform:scale(.95); }
+  .btn-main.start-btn { background:linear-gradient(135deg,var(--accent2),var(--accent)); color:#08080c; box-shadow:0 8px 32px var(--accent-glow),0 2px 8px rgba(0,0,0,.3); }
+  .btn-main.stop-btn { background:linear-gradient(135deg,var(--stop-color),#f43f5e); color:#fff; box-shadow:0 8px 32px var(--stop-glow),0 2px 8px rgba(0,0,0,.3); }
+
+  .stats { width:100%; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:28px; }
+  .stat { background:var(--surface); border:1px solid var(--surface-border); border-radius:18px; padding:16px 10px; text-align:center; backdrop-filter:blur(16px); }
+  .stat-num { font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:500; color:var(--white); line-height:1.2; }
+  .stat-label { font-size:10px; font-weight:400; text-transform:uppercase; letter-spacing:2px; color:var(--gray-dim); margin-top:6px; }
+
+  .sessions { width:100%; flex:1; }
+  .sessions-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .sessions-title { font-size:13px; font-weight:500; color:var(--gray); letter-spacing:.5px; }
+
+  .btn-clear {
+    background:none; border:1px solid var(--surface-border); color:var(--gray-dim);
+    font-family:'Outfit',sans-serif; font-size:11px; font-weight:400; letter-spacing:1px;
+    text-transform:uppercase; padding:6px 16px; border-radius:100px; cursor:pointer; transition:all .2s; backdrop-filter:blur(10px);
+  }
+  .btn-clear:active { background:var(--stop-soft); border-color:var(--stop-color); color:var(--stop-color); }
+
+  .sessions-list { display:flex; flex-direction:column; gap:8px; padding-bottom:40px; }
+
+  .session-card {
+    background:var(--surface); border:1px solid var(--surface-border); border-radius:16px;
+    padding:14px 18px; display:flex; align-items:center; gap:14px; backdrop-filter:blur(16px);
+    animation: cardIn .4s cubic-bezier(.16,1,.3,1) both;
+  }
+  @keyframes cardIn { from{opacity:0;transform:translateY(12px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+  .session-idx { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--gray-dim); width:24px; text-align:center; flex-shrink:0; }
+  .session-dot { width:6px; height:6px; border-radius:50%; background:var(--accent2); flex-shrink:0; opacity:.6; }
+  .session-info { flex:1; min-width:0; }
+  .session-time-range { font-size:14px; font-weight:400; color:var(--white); letter-spacing:.3px; }
+  .session-dur { font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:500; color:var(--accent); flex-shrink:0; }
+
+  .empty { text-align:center; padding:50px 20px; color:var(--gray-dim); }
+  .empty-icon { width:48px; height:48px; margin:0 auto 16px; border-radius:50%; background:var(--surface); border:1px solid var(--surface-border); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .empty-text { font-size:14px; font-weight:300; line-height:1.6; }
+
+  .fade-up { animation: fadeUp .6s cubic-bezier(.16,1,.3,1) both; }
+  .fd1{animation-delay:.05s} .fd2{animation-delay:.12s} .fd3{animation-delay:.2s} .fd4{animation-delay:.28s}
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="app">
+  <div class="header fade-up fd1">
+    <div class="logo">CHR<span>O</span>NO</div>
+    <div class="date-pill" id="dateLabel"></div>
+  </div>
+
+  <div class="timer-area fade-up fd2">
+    <div class="ring-wrapper" id="ringW">
+      <svg class="ring-svg" viewBox="0 0 272 272">
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6ee7b7"/>
+            <stop offset="100%" stop-color="#34d399"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-track" cx="136" cy="136" r="132"/>
+        <circle class="ring-progress" id="ringP" cx="136" cy="136" r="132"/>
+      </svg>
+      <div class="ring-glow"></div>
+      <div class="timer-content">
+        <div class="timer-digits" id="digits">00:00</div>
+        <div class="timer-cents" id="cents">.00</div>
+        <div class="timer-label" id="tLabel">prêt</div>
+      </div>
+    </div>
+    <button class="btn-main start-btn" id="btn" onclick="toggle()">Start</button>
+  </div>
+
+  <div class="stats fade-up fd3">
+    <div class="stat"><div class="stat-num" id="sC">0</div><div class="stat-label">Sessions</div></div>
+    <div class="stat"><div class="stat-num" id="sT">00:00</div><div class="stat-label">Total</div></div>
+    <div class="stat"><div class="stat-num" id="sA">--:--</div><div class="stat-label">Moyenne</div></div>
+  </div>
+
+  <div class="sessions fade-up fd4">
+    <div class="sessions-top">
+      <div class="sessions-title">Sessions du jour</div>
+      <button class="btn-clear" onclick="resetAll()">Effacer</button>
+    </div>
+    <div class="sessions-list" id="sL">
+      <div class="empty"><div class="empty-icon">⏱</div><div class="empty-text">Aucune session<br>Appuie sur Start pour commencer</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const K='chrono_v2', C=2*Math.PI*132;
+let run=false, st=null, el=0, rf=null;
+
+const today=()=>new Date().toISOString().slice(0,10);
+const pad=n=>String(n).padStart(2,'0');
+
+function load(){try{const d=JSON.parse(localStorage.getItem(K));if(d&&d.date===today())return d}catch{}return{date:today(),sessions:[],rs:null}}
+function save(d){localStorage.setItem(K,JSON.stringify(d))}
+
+function fD(ms){const t=Math.floor(ms/1000),h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;return h>0?`${pad(h)}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`}
+function fT(ts){const d=new Date(ts);return`${pad(d.getHours())}:${pad(d.getMinutes())}`}
+
+function setRing(f){document.getElementById('ringP').style.strokeDashoffset=C*(1-(f%1))}
+
+function upDisp(ms){
+  const t=Math.floor(ms/1000),h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60,cs=Math.floor(ms%1000/10);
+  document.getElementById('digits').textContent=h>0?`${pad(h)}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`;
+  document.getElementById('cents').textContent=`.${pad(cs)}`;
+  setRing((t%60)/60);
+}
+
+function tick(){if(!run)return;el=Date.now()-st;upDisp(el);rf=requestAnimationFrame(tick)}
+
+function toggle(){run?stop():start()}
+
+function start(){
+  run=true;st=Date.now();el=0;
+  const d=load();d.rs=st;save(d);
+  document.getElementById('btn').className='btn-main stop-btn';
+  document.getElementById('btn').textContent='Stop';
+  document.getElementById('ringW').classList.add('running');
+  document.getElementById('tLabel').textContent='en cours';
+  tick();
+}
+
+function stop(){
+  run=false;cancelAnimationFrame(rf);
+  const end=Date.now(),dur=end-st,d=load();
+  d.sessions.push({s:st,e:end,d:dur});d.rs=null;save(d);
+  document.getElementById('btn').className='btn-main start-btn';
+  document.getElementById('btn').textContent='Start';
+  document.getElementById('ringW').classList.remove('running');
+  document.getElementById('tLabel').textContent='terminé';
+  render();
+}
+
+function render(){
+  const d=load(),n=d.sessions.length,tot=d.sessions.reduce((a,s)=>a+s.d,0);
+  document.getElementById('sC').textContent=n;
+  document.getElementById('sT').textContent=fD(tot);
+  document.getElementById('sA').textContent=n>0?fD(tot/n):'--:--';
+  const l=document.getElementById('sL');
+  if(!n){l.innerHTML='<div class="empty"><div class="empty-icon">⏱</div><div class="empty-text">Aucune session<br>Appuie sur Start pour commencer</div></div>';return}
+  l.innerHTML=d.sessions.slice().reverse().map((s,i)=>{const num=n-i;return`<div class="session-card" style="animation-delay:${i*.04}s"><span class="session-idx">${pad(num)}</span><span class="session-dot"></span><div class="session-info"><div class="session-time-range">${fT(s.s)} → ${fT(s.e)}</div></div><span class="session-dur">${fD(s.d)}</span></div>`}).join('');
+}
+
+function resetAll(){
+  if(!confirm('Effacer toutes les sessions du jour ?'))return;
+  if(run){run=false;cancelAnimationFrame(rf)}
+  save({date:today(),sessions:[],rs:null});
+  document.getElementById('btn').className='btn-main start-btn';
+  document.getElementById('btn').textContent='Start';
+  document.getElementById('ringW').classList.remove('running');
+  document.getElementById('tLabel').textContent='prêt';
+  upDisp(0);setRing(0);render();
+}
+
+(function init(){
+  document.getElementById('dateLabel').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  const d=load();
+  if(d.rs){run=true;st=d.rs;document.getElementById('btn').className='btn-main stop-btn';document.getElementById('btn').textContent='Stop';document.getElementById('ringW').classList.add('running');document.getElementById('tLabel').textContent='en cours';tick()}
+  render();
+})();
+</script>
+</body>
+</html>
