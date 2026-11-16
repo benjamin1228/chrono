@@ -646,7 +646,7 @@ function domHTML(s){
     <div class="hero-row"><div><div class="hero-label">Moyenne du domaine</div><div class="hero-num md ${tone(a)}">${fx(a)}</div></div>
     ${p ? `<div class="right"><div class="hero-label">Avec prévisions</div><div class="hero-num md plan">${fx(af)}</div></div>` : ``}</div>
     ${scale(a, p ? af : null, true)}
-    ${s.exam.on ? `<div class="split"><div><small>Cours, 50 %</small><b class="${tone(c)}">${fx(c)}</b></div><div><small>Examen, 50 %</small><b class="${tone(ev)}">${ev != null ? fg(ev) : "–"}</b></div></div>` : ``}
+    ${s.exam.on && examVal(s, true) != null ? `<div class="split"><div><small>Cours, 50 %</small><b class="${tone(c)}">${fx(c)}</b></div><div><small>Examen, 50 %</small><b class="${tone(ev)}">${ev != null ? fg(ev) : "–"}</b></div></div>` : ``}
   </section>`;
   return `<div class="dtop"><button class="crumb" data-act="back">${ic("back")}Domaines</button><button class="btn secondary sm" data-act="editDom">${ic("edit")}Modifier</button></div>
   <header class="dhead"><span class="badge xl ${tone(a)}">${esc(s.code || "?")}</span><div class="dhead-t"><h1 class="dtitle">${esc(s.name)}</h1>
@@ -656,8 +656,8 @@ function domHTML(s){
 
 function simOpts(s){
   const o = [];
-  if (s.exam.on) o.push(["exam", s.exam.name || "Examen"]);
   for (const x of s.subs) if (x.w > 0) o.push([x.id, x.name]);
+  if (s.exam.on && s.exam.v != null && s.exam.f) o.push(["exam", s.exam.name || "Examen"]);
   return o;
 }
 function simHTML(s){
@@ -699,7 +699,7 @@ function updateSim(){
     if (x){ const c = clone(x), w = num(st.coef); c.evals.push({ v: st.x, w: w > 0 ? w : 1, f: true, ne: false }); const sa = subAvg(c, true);
       subLine = `<span class="sres-row"><span>${esc(x.name)} passe à</span><strong class="${tone(sa)}">${fx(sa, 2)}</strong></span>`; }
   }
-  $("#simRes").innerHTML = subLine + `<span class="sres-row"><span>Moyenne du domaine${s.exam.on && examVal(s, true) == null && st.where !== "exam" ? " (sans examen)" : ""}</span><strong class="${tone(r)}">${fx(r, 2)}</strong></span>`;
+  $("#simRes").innerHTML = subLine + `<span class="sres-row"><span>Moyenne du domaine</span><strong class="${tone(r)}">${fx(r, 2)}</strong></span>`;
   const out = $("#simNeed"), T = num(st.target);
   if (!(T >= 1 && T <= 6)){ out.textContent = "Entre une moyenne entre 1 et 6."; return; }
   const f1 = hypo(s, st, 1), f6 = hypo(s, st, 6);
@@ -720,7 +720,6 @@ function needGrade(s, where, coef, T){
 }
 function needOptions(s){
   const o = [];
-  if (s.exam.on && (s.exam.v == null || s.exam.f)) o.push(["exam", "À l'examen", "à l'examen"]);
   for (const x of s.subs) if (x.w > 0) o.push([x.id, "Prochaine note en " + x.name, "en " + x.name]);
   return o;
 }
@@ -732,8 +731,9 @@ function needOut(n){
 }
 function needLine(s){
   const o = needOptions(s); if (!o.length) return "";
-  const T = domTarget(s), main = o[0];
-  const n = needGrade(s, main[0], 1, T);
+  const T = domTarget(s);
+  let main = o[0], n = needGrade(s, main[0], 1, T);
+  for (const x of o.slice(1)){ const m = needGrade(s, x[0], 1, T); if (m != null && (n == null || m < n)){ n = m; main = x; } }
   const txt = n == null ? "" : n > 6 ? `<b class="fail">pas atteignable</b>` : n <= 1 ? `<b class="pass">déjà assuré</b>` : `il te faut <b>${(Math.ceil(n * 10 - 1e-9) / 10).toFixed(1)}</b> ${esc(main[2])}`;
   return txt ? `<span class="dneed">${ic("target")}<span>Pour ${fg(T)} : ${txt}</span></span>` : "";
 }
