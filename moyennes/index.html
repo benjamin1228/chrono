@@ -399,6 +399,15 @@
   });
 
   loadLocal();
+  // Notes du portail Persiaux (16.11.2026), chargées une seule fois
+  try {
+    if (localStorage.getItem("moyennes-seed") !== "2026-11-16"){
+      const seed = {"subjects":[{"name":"A – Structures et organisation","grades":[{"v":4.7,"w":1},{"v":4.5,"w":1}]},{"name":"B – Interaction interconnectée","grades":[{"v":4.8,"w":4},{"v":5.5,"w":2},{"v":3.7,"w":2},{"v":5.1,"w":2}]},{"name":"C – Coordination des processus","grades":[{"v":4.8,"w":1},{"v":3.8,"w":1},{"v":5.7,"w":1}]},{"name":"D – Clients et fournisseurs","grades":[{"v":5,"w":3},{"v":4.1,"w":4},{"v":5.3,"w":2},{"v":4.8,"w":2}]},{"name":"E – Technologies numériques","grades":[{"v":6,"w":0.4},{"v":5.8,"w":0.4},{"v":6,"w":0.2},{"v":5.6,"w":1}]},{"name":"Italien A2","grades":[{"v":5,"w":1},{"v":2.8,"w":2},{"v":4.1,"w":1}]}]};
+      data = { subjects: seed.subjects.map(x => ({ id: uid(), name: x.name, grades: x.grades.map(g => ({ id: uid(), v: g.v, w: g.w, f: false })) })), updatedAt: Date.now() };
+      saveLocal();
+      localStorage.setItem("moyennes-seed", "2026-11-16");
+    }
+  } catch(e){}
   render();
 })();
 </script>
