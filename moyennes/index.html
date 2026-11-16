@@ -6,418 +6,754 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Moyennes">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="apple-mobile-web-app-title" content="Moyennes">
-<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ECEFF4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1320" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&display=swap" rel="stylesheet">
 <title>Mes moyennes</title>
 <style>
   :root{
-    --bg:#f2f2f7;--card:#fff;--text:#111;--muted:#6e6e73;--line:#e5e5ea;
-    --accent:#0a7cff;--ok:#1f9d55;--bad:#e5484d;--fut:#7c4dff;--futbg:rgba(124,77,255,.08);
-    --field:#f2f2f7;
+    --bg:#ECEFF4; --surface:#FFFFFF; --chip:#E2E7EF; --ink:#16233A; --muted:#67738A; --hair:#DCE1EA;
+    --pass:#1E8C5A; --pass-bg:rgba(30,140,90,.11); --fail:#D1453B; --fail-bg:rgba(209,69,59,.11);
+    --plan:#5B4BD6; --plan-bg:rgba(91,75,214,.09); --rail:#D3D9E3; --scrim:rgba(13,19,32,.42);
+    --num:"Bricolage Grotesque", -apple-system, BlinkMacSystemFont, sans-serif;
+    --ui:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    --safe-b:env(safe-area-inset-bottom);
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --bg:#000;--card:#1c1c1e;--text:#f2f2f7;--muted:#98989f;--line:#2c2c2e;
-      --accent:#0a84ff;--ok:#30d158;--bad:#ff6961;--fut:#bf8cff;--futbg:rgba(191,140,255,.12);
-      --field:#2c2c2e;
+      --bg:#0D1320; --surface:#172133; --chip:#223049; --ink:#E9EDF5; --muted:#8D98AE; --hair:#26324A;
+      --pass:#3CC98A; --pass-bg:rgba(60,201,138,.14); --fail:#FF7468; --fail-bg:rgba(255,116,104,.14);
+      --plan:#A497FF; --plan-bg:rgba(164,151,255,.13); --rail:#2A3853; --scrim:rgba(0,0,0,.55);
     }
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;background:var(--bg);color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
-    -webkit-font-smoothing:antialiased}
-  #app{max-width:520px;margin:0 auto;
-    padding:calc(18px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
-  .backup{display:block;margin:28px auto 0;color:var(--muted);font-size:14px;text-decoration:underline}
-  textarea.field{width:100%;min-height:120px;font-size:13px;font-family:ui-monospace,Menlo,monospace;resize:vertical}
-  button,input{font:inherit;color:inherit}
-  button{cursor:pointer;border:0;background:none;padding:0}
-  .num,.big,.chip,.avg,.favg{font-variant-numeric:tabular-nums}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+  :focus-visible{outline:2.5px solid var(--plan);outline-offset:2px;border-radius:8px}
+  [hidden]{display:none!important}
+  .pass{color:var(--pass)} .fail{color:var(--fail)} .plan{color:var(--plan)}
 
-  .hd-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
-  h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:0}
-  h2{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:4px 0 14px;word-break:break-word}
-  h3{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:22px 4px 8px}
-  .sync{font-size:12px;color:var(--muted);white-space:nowrap}
+  #app{max-width:560px;margin:0 auto;
+    padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(96px + var(--safe-b)) calc(16px + env(safe-area-inset-left))}
 
-  .hero{background:var(--card);border-radius:20px;padding:20px;text-align:center;margin-bottom:18px}
-  .label{font-size:13px;color:var(--muted);font-weight:500}
-  .big{font-size:60px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:4px 0 2px}
-  .round{font-size:13px;color:var(--muted)}
-  .future{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--futbg);color:var(--fut);font-size:15px}
-  .future b{font-size:18px}
-  .ok{color:var(--ok)} .bad{color:var(--bad)}
+  /* titles */
+  .top h1,.dtitle{font-family:var(--num);font-weight:750;letter-spacing:-.025em;margin:0}
+  .top h1{font-size:34px;line-height:1.05;margin:8px 0 18px}
+  .sec{font-size:15px;font-weight:600;color:var(--muted);margin:26px 6px 8px}
 
-  .list{display:flex;flex-direction:column;gap:8px}
-  .card{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
-    background:var(--card);border-radius:16px;padding:14px 16px;text-align:left}
-  .card:active{opacity:.7}
-  .name{font-size:17px;font-weight:600;word-break:break-word}
-  .meta{font-size:13px;color:var(--muted);margin-top:2px}
-  .card-avg{text-align:right;flex-shrink:0}
-  .avg{font-size:22px;font-weight:700}
-  .favg{font-size:13px;color:var(--fut);font-weight:600}
-  .empty{background:var(--card);border-radius:16px;padding:22px 18px;color:var(--muted);text-align:center;font-size:15px;line-height:1.45}
+  /* hero */
+  .hero{background:var(--surface);border-radius:24px;padding:20px 20px 18px}
+  .hero-label{font-size:14px;color:var(--muted);font-weight:500}
+  .hero-num{font-family:var(--num);font-weight:800;font-size:72px;line-height:.95;letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin:6px 0 16px}
+  .hero-num.md{font-size:46px;margin:4px 0 14px}
+  .hero-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .hero-row .right{text-align:right}
+  .hero-foot{margin:18px 0 0;font-size:15px;color:var(--muted)}
+  .hero-foot strong{font-family:var(--num);font-size:19px;font-weight:750;color:var(--plan)}
+  .goal{margin:8px 0 0;font-size:15px;color:var(--muted)}
+  .goal strong{color:var(--ink)}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+  .split div{background:var(--bg);border-radius:12px;padding:8px 12px}
+  .split small{display:block;font-size:12.5px;color:var(--muted)}
+  .split b{font-family:var(--num);font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
 
-  .inline-form{display:flex;gap:8px;margin-top:12px}
-  .field{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:17px;outline:none}
-  .panel .field{background:var(--field);border-color:transparent}
-  .field:focus{border-color:var(--accent)}
-  .btn{background:var(--accent);color:#fff;border-radius:12px;padding:12px 16px;font-size:17px;font-weight:600}
-  .btn:active{opacity:.8}
-  .btn.ghost{background:var(--field);color:var(--text)}
-  .btn.danger{background:transparent;color:var(--bad)}
-  .btn.danger.armed{background:var(--bad);color:#fff}
-  .btn.full{width:100%}
+  /* the 1–6 scale */
+  .scale{position:relative;height:6px;margin:8px 0 2px}
+  .scale .rail{position:absolute;inset:0;border-radius:3px;background:var(--rail)}
+  .scale .fill{position:absolute;left:0;top:0;bottom:0;border-radius:3px;opacity:.38}
+  .scale .fill.pass{background:var(--pass)} .scale .fill.fail{background:var(--fail)}
+  .scale .passline{position:absolute;top:-5px;bottom:-5px;width:2px;margin-left:-1px;background:var(--ink);opacity:.55;border-radius:1px}
+  .scale .dot{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:3px solid var(--surface);box-sizing:content-box;transform:translate(-3px,-3px)}
+  .scale .dot.pass{background:var(--pass)} .scale .dot.fail{background:var(--fail)}
+  .scale .dot.plan{background:var(--surface);border:2.5px solid var(--plan);width:10px;height:10px;margin:-5px 0 0 -5px;transform:translate(-2.5px,-2.5px)}
+  .scale .planseg{position:absolute;top:2px;height:2px;background:repeating-linear-gradient(90deg,var(--plan) 0 4px,transparent 4px 7px)}
+  .scale.big{height:8px;margin:4px 0 26px}
+  .scale.big .dot{width:18px;height:18px;margin:-9px 0 0 -9px}
+  .scale .tick{position:absolute;top:16px;transform:translateX(-50%);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .scale .tick.four{color:var(--ink);font-weight:700}
 
-  .subhead{display:flex;justify-content:space-between;align-items:center}
-  .link{color:var(--accent);font-size:17px;padding:6px 0}
-  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .stat{background:var(--card);border-radius:16px;padding:14px;text-align:center}
-  .stat .num{font-size:34px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
-  .stat.fut .label,.stat.fut .num{color:var(--fut)}
-  .stat .round{font-size:12px}
+  /* grouped lists */
+  .group{background:var(--surface);border-radius:18px;overflow:hidden}
+  .group > * + *{border-top:1px solid var(--hair)}
+  .drow{display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:center;width:100%;padding:14px 16px}
+  .drow:active,.erow:active,.srow:active{background:var(--chip)}
+  .badge{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:var(--chip);font-family:var(--num);font-weight:750;font-size:17px}
+  .badge.lg{width:46px;height:46px;font-size:21px;border-radius:13px}
+  .dmain{min-width:0;display:flex;flex-direction:column;gap:9px}
+  .dname{font-size:15.5px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .dnum{text-align:right;font-family:var(--num);font-weight:750;font-size:24px;font-variant-numeric:tabular-nums;line-height:1}
+  .dnum small{display:block;font-size:14px;font-weight:650;margin-top:4px}
+  .alert{margin-top:12px;background:var(--fail-bg);color:var(--ink);border-radius:16px;padding:12px 14px;font-size:15px}
+  .alert b{color:var(--fail)}
+  .alert button{text-decoration:underline;text-underline-offset:2px;font-weight:600}
+  .empty{padding:22px 18px;color:var(--muted);font-size:15px;text-align:center}
+  .addline{display:block;margin:12px 6px 0;color:var(--plan);font-weight:600;font-size:16px;padding:6px 0}
 
-  .chips{display:flex;flex-wrap:wrap;gap:8px}
-  .chip{background:var(--card);border-radius:12px;padding:9px 13px;font-size:18px;font-weight:700;border:1.5px solid transparent}
-  .chip small{font-size:12px;font-weight:500;color:var(--muted);margin-left:3px}
-  .chip.f{border:1.5px dashed var(--fut);color:var(--fut);background:var(--futbg)}
-  .chip:active{opacity:.7}
-  .none{font-size:14px;color:var(--muted);padding:2px 4px}
+  /* domain page */
+  .navbar{display:flex;justify-content:space-between;align-items:center;margin:2px -4px 10px}
+  .navbar button{display:inline-flex;align-items:center;gap:2px;color:var(--plan);font-size:17px;padding:8px 4px}
+  .dhead{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
+  .dtitle{font-size:25px;line-height:1.15}
+  .subblock{margin-top:24px}
+  .subhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 6px 8px}
+  .subname{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;font-weight:650;font-size:16px;min-width:0}
+  .subname .coef{font-size:13.5px;font-weight:500;color:var(--muted)}
+  button.subname{text-decoration:underline;text-decoration-color:var(--hair);text-underline-offset:4px}
+  .subavg{font-family:var(--num);font-weight:750;font-size:19px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .subavg small{font-size:14px}
+  .erow{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px 12px 16px}
+  .emain{flex:1;min-width:0}
+  .ename{display:block;font-size:15.5px;font-weight:500;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .emeta{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+  .pill{flex-shrink:0;min-width:52px;text-align:center;padding:6px 10px;border-radius:10px;font-family:var(--num);font-weight:750;font-size:18px;font-variant-numeric:tabular-nums}
+  .pill.pass{background:var(--pass-bg);color:var(--pass)} .pill.fail{background:var(--fail-bg);color:var(--fail)}
+  .pill.plan{background:var(--plan-bg);color:var(--plan);outline:1.5px dashed var(--plan);outline-offset:-1.5px}
+  .pill.ne{font-family:var(--ui);font-size:12.5px;font-weight:600;color:var(--muted);background:var(--chip);padding:8px 8px}
+  .pill.none{color:var(--muted);background:var(--chip)}
+  .addrow{display:block;width:100%;padding:13px 16px;color:var(--plan);font-weight:600;font-size:15.5px}
 
-  .panel{background:var(--card);border-radius:16px;padding:14px;margin-top:8px}
-  .row{display:flex;gap:8px}
-  .row label{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:500}
-  .row label.small{flex:0 0 32%}
-  .seg{display:flex;background:var(--field);border-radius:10px;padding:3px;margin:10px 0}
-  .seg button{flex:1;padding:8px;border-radius:8px;font-size:15px;font-weight:500;color:var(--muted)}
-  .seg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-  .seg button.on.fbtn{color:var(--fut)}
-  .err{color:var(--bad);font-size:14px;min-height:0;margin-top:6px}
+  /* simulation */
+  .card{background:var(--surface);border-radius:18px;padding:16px}
+  .lbl{display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--muted);font-weight:500}
+  .inp{width:100%;background:var(--bg);border:1.5px solid transparent;border-radius:12px;padding:11px 13px;font-size:17px;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
+  .inp:focus{border-color:var(--plan)}
+  select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:34px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .simgrid{display:flex;gap:10px}
+  .simgrid > .lbl:first-child{flex:1;min-width:0}
+  .simgrid > .lbl + .lbl{flex:0 0 92px}
+  .slider{margin:18px 0 4px}
+  .sline{display:flex;justify-content:space-between;align-items:baseline}
+  .sline span{font-size:15px;color:var(--muted)}
+  .sline strong{font-family:var(--num);font-size:30px;font-weight:800;color:var(--plan);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;margin:10px 0 6px;accent-color:var(--plan);height:28px}
+  .sres{font-size:16px}
+  .sres strong,.needout strong{font-family:var(--num);font-size:21px;font-weight:750}
+  .need{margin-top:16px;padding-top:16px;border-top:1px solid var(--hair);display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:end}
+  .needout{font-size:15.5px;padding-bottom:10px;line-height:1.35}
+  .hint{font-size:13.5px;color:var(--muted);margin:10px 0 0}
+
+  /* history */
+  .chart{background:var(--surface);border-radius:24px;padding:18px 16px 12px}
+  .chart svg{display:block;width:100%;height:auto;overflow:visible}
+  .chart .cap{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:6px}
+  .month{font-size:15px;font-weight:600;color:var(--muted);margin:24px 6px 8px;text-transform:none}
+  .hcode{font-weight:650;color:var(--ink)}
+
+  /* settings */
+  .srow{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;padding:14px 16px;font-size:16px}
+  .srow .val{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .srow.danger{color:var(--fail);font-weight:600}
+  .srow.armed{background:var(--fail);color:#fff}
+  .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border-radius:12px;padding:3px;margin:12px 16px 14px}
+  .seg button{padding:9px 6px;border-radius:9px;font-size:14.5px;font-weight:600;color:var(--muted);text-align:center}
+  .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(13,19,32,.14)}
+  .note{font-size:13.5px;color:var(--muted);margin:10px 6px 0;line-height:1.45}
+
+  /* tab bar */
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;justify-content:center;
+    background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    border-top:1px solid var(--hair);padding:6px 8px calc(6px + var(--safe-b))}
+  .tabbar .in{display:grid;grid-template-columns:repeat(3,1fr);width:100%;max-width:560px}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;font-size:11.5px;font-weight:600;color:var(--muted);text-align:center}
+  .tab svg{width:26px;height:26px}
+  .tab.on{color:var(--ink)}
+
+  /* sheet */
+  .sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+  .backdrop{position:absolute;inset:0;background:var(--scrim)}
+  .sheet-body{position:relative;width:100%;max-width:560px;max-height:92vh;overflow:auto;background:var(--surface);border-radius:24px 24px 0 0;
+    padding:10px 18px calc(20px + var(--safe-b))}
+  .grab{width:38px;height:5px;border-radius:3px;background:var(--hair);margin:0 auto 12px}
+  .sheet h2{font-family:var(--num);font-size:22px;font-weight:750;letter-spacing:-.015em;margin:0 0 4px}
+  .sheet .ctx{font-size:14px;color:var(--muted);margin:0 0 14px}
+  .fstack{display:flex;flex-direction:column;gap:12px}
+  .switch{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:16px;padding:4px 2px;cursor:pointer}
+  .switch small{display:block;color:var(--muted);font-size:13px}
+  .switch input{position:absolute;opacity:0;pointer-events:none}
+  .switch .knob{flex-shrink:0;position:relative;width:51px;height:31px;border-radius:16px;background:var(--rail);transition:background .15s}
+  .switch .knob::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+  .switch input:checked + .knob{background:var(--plan)}
+  .switch input:checked + .knob::after{transform:translateX(20px)}
+  .switch input:focus-visible + .knob{outline:2.5px solid var(--plan);outline-offset:2px}
+  .actions{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+  .btn{width:100%;padding:14px;border-radius:14px;font-weight:650;font-size:17px;text-align:center}
+  .btn.primary{background:var(--ink);color:var(--bg)}
+  .btn.quiet{background:var(--bg)}
+  .btn.danger{color:var(--fail)}
+  .btn.danger.armed{background:var(--fail);color:#fff}
+  .err{color:var(--fail);font-size:14.5px}
   .err:empty{display:none}
-  .need{margin-top:12px;font-size:15px;line-height:1.45}
-  .need b{font-size:22px}
-  .hint{font-size:13px;color:var(--muted);margin-top:6px}
+  textarea.inp{min-height:130px;font-size:13px;font-family:ui-monospace,Menlo,monospace;resize:vertical}
 
-  .sheet{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center}
-  .sheet.hidden{display:none}
-  .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}
-  .sheet-body{position:relative;width:100%;max-width:520px;background:var(--card);border-radius:20px 20px 0 0;
-    padding:18px 16px calc(28px + env(safe-area-inset-bottom));animation:up .2s ease-out}
-  @keyframes up{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
-  .sheet-body h3{margin-top:0}
-  .sheet-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .toast{position:fixed;left:50%;bottom:calc(84px + var(--safe-b));transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--bg);
+    padding:10px 16px;border-radius:12px;font-size:15px;font-weight:600;white-space:nowrap}
+
+  @media (prefers-reduced-motion: no-preference){
+    .sheet-body{animation:rise .22s cubic-bezier(.2,.8,.2,1)}
+    .backdrop{animation:fade .2s ease-out}
+    .hero .scale .dot{transition:left .3s}
+  }
+  @keyframes rise{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
 </style>
 </head>
 <body>
-<div id="app">
-  <div class="hd-row"><h1>Mes moyennes</h1></div>
-  <main id="view"></main>
-</div>
-<div id="sheet" class="sheet hidden"><div class="backdrop" data-act="close"></div><div class="sheet-body" id="sheetBody"></div></div>
+<div id="app"><main id="view"></main></div>
+
+<nav class="tabbar" aria-label="Navigation"><div class="in">
+  <button class="tab" data-tab="notes"><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h18M4 13h18M4 19h11"/></svg>Notes</button>
+  <button class="tab" data-tab="hist"><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l6-7 4.5 4L22 7"/><path d="M3 23h20"/></svg>Historique</button>
+  <button class="tab" data-tab="set"><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h10M18 8h4M4 18h4M12 18h10"/><circle cx="16" cy="8" r="2.3"/><circle cx="10" cy="18" r="2.3"/></svg>Réglages</button>
+</div></nav>
+
+<div id="sheet" class="sheet" hidden><div class="backdrop" data-act="close"></div><div class="sheet-body" id="sheetBody" role="dialog" aria-modal="true"></div></div>
+<div id="toast" class="toast" role="status" hidden></div>
 
 <script>
 (function(){
-  "use strict";
-  const LS_KEY = "moyennes-v1";
-  let data = { subjects: [], updatedAt: 0 };
-  let view = { name: "home" };
-  let addKind = "real";       // remembered kind for the add form
-  let addCoef = "1";
-  let target = "4", nextCoef = "1";
+"use strict";
+const KEY = "moyennes-v2", OLD = "moyennes-v1", IMP = "moyennes-imported";
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const num = s => { const n = parseFloat(String(s ?? "").replace(",", ".").trim()); return isFinite(n) ? n : NaN; };
+const clone = o => JSON.parse(JSON.stringify(o));
+const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); };
 
-  const $ = (s, el=document) => el.querySelector(s);
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const uid = () => Math.random().toString(36).slice(2, 10);
-  const num = s => { const n = parseFloat(String(s).replace(",", ".").trim()); return isFinite(n) ? n : NaN; };
-  const fmt = x => (x == null || !isFinite(x)) ? "—" : x.toFixed(2);
-  const fmtG = x => String(Math.round(x * 100) / 100);
-  const half = x => Math.round(x * 2) / 2;
-  const cls = x => (x == null || !isFinite(x)) ? "" : (x >= 4 ? "ok" : "bad");
-  const clone = o => JSON.parse(JSON.stringify(o));
-  const valid = d => d && Array.isArray(d.subjects);
+const emptyState = () => ({ v: 2, subjects: [], extras: [], settings: { dec: 1, goal: null }, updatedAt: 0 });
+let S = emptyState();
+let nav = { tab: "notes", dom: null };
+const sim = {};
+let sheet = null;
 
-  /* ---------- storage ---------- */
-  function loadLocal(){
-    try { const s = localStorage.getItem(LS_KEY); if (s) { const d = JSON.parse(s); if (valid(d)) data = d; } } catch(e){}
-  }
-  function saveLocal(){ try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e){} }
-  function persist(){ data.updatedAt = Date.now(); saveLocal(); }
+/* ---------- data ---------- */
+const nG = x => { const n = +x; return x !== null && x !== "" && isFinite(n) && n >= 1 && n <= 6 ? Math.round(n * 100) / 100 : null; };
+const nW = (x, d = 1) => { const n = +x; return isFinite(n) && n >= 0 && n <= 100 ? n : d; };
+const nDate = d => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "";
+const nStr = (s, max, d = "") => typeof s === "string" ? s.slice(0, max) : d;
 
-  /* ---------- maths ---------- */
-  function wavg(list){
-    let s = 0, w = 0;
-    for (const g of list){ s += g.v * g.w; w += g.w; }
-    return w > 0 ? s / w : null;
-  }
-  function subjStats(sub){
-    const real = sub.grades.filter(g => !g.f);
-    const all = sub.grades;
-    return { cur: wavg(real), fut: wavg(all), nReal: real.length, nFut: all.length - real.length };
-  }
-  function general(){
-    const cur = [], fut = [];
-    for (const s of data.subjects){
-      const st = subjStats(s);
-      if (st.cur != null) cur.push(st.cur);
-      if (st.fut != null) fut.push(st.fut);
-    }
-    const m = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
-    return { cur: m(cur), fut: m(fut), hasFut: data.subjects.some(s => s.grades.some(g => g.f)) };
-  }
-
-  /* ---------- views ---------- */
-  function render(){
-    if (view.name === "subject" && !data.subjects.find(s => s.id === view.id)) view = { name: "home" };
-    $("#view").innerHTML = view.name === "home" ? homeHTML() : subjectHTML(data.subjects.find(s => s.id === view.id));
-    if (view.name === "subject") updateNeed();
-  }
-
-  function homeHTML(){
-    const g = general();
-    let h = `<section class="hero">
-      <div class="label">Moyenne générale</div>
-      <div class="big ${cls(g.cur)}">${fmt(g.cur)}</div>
-      ${g.cur != null ? `<div class="round">Arrondi au demi : ${half(g.cur)}</div>` : ``}
-      ${g.hasFut && g.fut != null ? `<div class="future">Avec notes futures : <b>${fmt(g.fut)}</b>${deltaHTML(g.cur, g.fut)}</div>` : ``}
-    </section>`;
-    if (!data.subjects.length){
-      h += `<div class="empty">Ajoute ta première branche (Maths, Français, Compta…), puis entre tes notes dedans.</div>`;
-    } else {
-      h += `<div class="list">` + data.subjects.map(s => {
-        const st = subjStats(s);
-        const meta = st.nReal + (st.nReal > 1 ? " notes" : " note") + (st.nFut ? ` · ${st.nFut} future${st.nFut > 1 ? "s" : ""}` : "");
-        return `<button class="card" data-open="${s.id}">
-          <div><div class="name">${esc(s.name)}</div><div class="meta">${meta}</div></div>
-          <div class="card-avg"><div class="avg ${cls(st.cur)}">${fmt(st.cur)}</div>
-          ${st.nFut ? `<div class="favg">→ ${fmt(st.fut)}</div>` : ``}</div>
-        </button>`;
-      }).join("") + `</div>`;
-    }
-    h += `<form class="inline-form" id="addSubject" autocomplete="off">
-      <input class="field" id="subName" placeholder="Nouvelle branche" maxlength="40">
-      <button class="btn" type="submit">Ajouter</button>
-    </form>
-    <button class="backup" data-act="backup">Sauvegarder / restaurer mes notes</button>`;
-    return h;
-  }
-
-  function deltaHTML(a, b){
-    if (a == null || b == null) return "";
-    const d = b - a;
-    if (Math.abs(d) < 0.005) return ` <span>(=)</span>`;
-    return ` <span>(${d > 0 ? "+" : ""}${d.toFixed(2)})</span>`;
-  }
-
-  function subjectHTML(s){
-    const st = subjStats(s);
-    const real = s.grades.filter(g => !g.f), fut = s.grades.filter(g => g.f);
-    const chip = g => `<button class="chip ${g.f ? "f" : cls(g.v)}" data-grade="${g.id}">${fmtG(g.v)}${g.w !== 1 ? `<small>×${fmtG(g.w)}</small>` : ``}</button>`;
-    return `
-      <div class="subhead"><button class="link" data-act="back">‹ Retour</button><button class="link" data-act="editSubject">Modifier</button></div>
-      <h2>${esc(s.name)}</h2>
-      <section class="stats">
-        <div class="stat"><div class="label">Moyenne actuelle</div><div class="num ${cls(st.cur)}">${fmt(st.cur)}</div>
-          ${st.cur != null ? `<div class="round">au demi : ${half(st.cur)}</div>` : ``}</div>
-        <div class="stat fut"><div class="label">Avec notes futures</div><div class="num">${st.nFut ? fmt(st.fut) : "—"}</div>
-          ${st.nFut && st.fut != null ? `<div class="round">au demi : ${half(st.fut)}</div>` : ``}</div>
-      </section>
-
-      <h3>Notes</h3>
-      <div class="chips">${real.length ? real.map(chip).join("") : `<div class="none">Aucune note pour l'instant.</div>`}</div>
-      ${fut.length ? `<h3>Notes futures</h3><div class="chips">${fut.map(chip).join("")}</div>` : ``}
-
-      <h3>Ajouter</h3>
-      <form class="panel" id="addGrade" autocomplete="off">
-        <div class="row">
-          <label>Note (1 à 6)<input class="field" id="gv" inputmode="decimal" placeholder="4.5"></label>
-          <label class="small">Coef.<input class="field" id="gw" inputmode="decimal" value="${esc(addCoef)}"></label>
-        </div>
-        <div class="seg">
-          <button type="button" data-kind="real" class="${addKind === "real" ? "on" : ""}">Note réelle</button>
-          <button type="button" data-kind="future" class="fbtn ${addKind === "future" ? "on" : ""}">Note future</button>
-        </div>
-        <button class="btn full" type="submit">Ajouter la note</button>
-        <div class="err" id="gerr"></div>
-      </form>
-
-      <h3>Quelle note me faut-il ?</h3>
-      <section class="panel">
-        <div class="row">
-          <label>Moyenne visée<input class="field" id="tg" inputmode="decimal" value="${esc(target)}"></label>
-          <label>Coef. du prochain test<input class="field" id="tc" inputmode="decimal" value="${esc(nextCoef)}"></label>
-        </div>
-        <div class="need" id="needOut"></div>
-        ${fut.length ? `<div class="hint">Tes notes futures sont comptées dans le calcul.</div>` : ``}
-      </section>`;
-  }
-
-  function updateNeed(){
-    const s = data.subjects.find(x => x.id === view.id); const out = $("#needOut");
-    if (!s || !out) return;
-    const T = num(target), c = num(nextCoef);
-    if (!(T >= 1 && T <= 6) || !(c > 0)){ out.innerHTML = `<span class="hint">Entre une moyenne entre 1 et 6 et un coef. positif.</span>`; return; }
-    let S = 0, W = 0; for (const g of s.grades){ S += g.v * g.w; W += g.w; }
-    const need = (T * (W + c) - S) / c;
-    if (need > 6) out.innerHTML = `Il te faudrait <b class="bad">${need.toFixed(2)}</b><br>Pas atteignable avec une seule note.`;
-    else if (need <= 1) out.innerHTML = `<b class="ok">Objectif assuré</b><br>Même avec un 1, tu restes à ${T} ou plus.`;
-    else out.innerHTML = `Il te faut au moins <b class="${cls(need)}">${need.toFixed(2)}</b><br><span class="hint">Soit ${Math.ceil(need * 2) / 2} si les notes sont au demi.</span>`;
-  }
-
-  /* ---------- sheet (edit dialogs) ---------- */
-  let sheetState = null;
-  function openSheet(html, state){ sheetState = state; $("#sheetBody").innerHTML = html; $("#sheet").classList.remove("hidden"); }
-  function closeSheet(){ sheetState = null; $("#sheet").classList.add("hidden"); $("#sheetBody").innerHTML = ""; }
-
-  function openGradeSheet(gid){
-    const s = data.subjects.find(x => x.id === view.id); const g = s && s.grades.find(x => x.id === gid);
-    if (!g) return;
-    openSheet(`<h3>Modifier la note</h3>
-      <form id="editGrade" autocomplete="off">
-        <div class="row">
-          <label>Note<input class="field" id="ev" inputmode="decimal" value="${fmtG(g.v)}"></label>
-          <label class="small">Coef.<input class="field" id="ew" inputmode="decimal" value="${fmtG(g.w)}"></label>
-        </div>
-        <div class="seg">
-          <button type="button" data-ekind="real" class="${!g.f ? "on" : ""}">Note réelle</button>
-          <button type="button" data-ekind="future" class="fbtn ${g.f ? "on" : ""}">Note future</button>
-        </div>
-        <div class="err" id="eerr"></div>
-        <div class="sheet-actions">
-          <button class="btn full" type="submit">Enregistrer</button>
-          <button class="btn danger full" type="button" data-act="delGrade">Supprimer la note</button>
-          <button class="btn ghost full" type="button" data-act="close">Annuler</button>
-        </div>
-      </form>`, { type: "grade", gid, f: g.f, armed: false });
-  }
-
-  function openSubjectSheet(){
-    const s = data.subjects.find(x => x.id === view.id); if (!s) return;
-    openSheet(`<h3>Modifier la branche</h3>
-      <form id="editSubject" autocomplete="off">
-        <input class="field" style="width:100%" id="sn" value="${esc(s.name)}" maxlength="40">
-        <div class="sheet-actions">
-          <button class="btn full" type="submit">Renommer</button>
-          <button class="btn danger full" type="button" data-act="delSubject">Supprimer la branche</button>
-          <button class="btn ghost full" type="button" data-act="close">Annuler</button>
-        </div>
-      </form>`, { type: "subject", armed: false });
-  }
-
-  function openBackupSheet(){
-    openSheet(`<h3>Sauvegarde</h3>
-      <div class="hint" style="margin:0 0 8px">Tes notes restent sur ce téléphone. Copie ce code et garde-le (Notes, mail…). Pour restaurer, colle un code puis touche « Restaurer ».</div>
-      <textarea class="field" id="bk">${esc(JSON.stringify({subjects:data.subjects}))}</textarea>
-      <div class="err" id="bkerr"></div>
-      <div class="sheet-actions">
-        <button class="btn full" type="button" data-act="copyBackup">Copier le code</button>
-        <button class="btn ghost full" type="button" data-act="restore">Restaurer</button>
-        <button class="btn ghost full" type="button" data-act="close">Fermer</button>
-      </div>`, { type: "backup", armed: false });
-  }
-
-  /* ---------- events ---------- */
-  document.addEventListener("click", e => {
-    const t = e.target.closest("button, .backdrop"); if (!t) return;
-    if (t.dataset.open){ view = { name: "subject", id: t.dataset.open }; render(); window.scrollTo(0, 0); return; }
-    if (t.dataset.grade){ openGradeSheet(t.dataset.grade); return; }
-    if (t.dataset.kind){ addKind = t.dataset.kind; t.parentNode.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === t)); return; }
-    if (t.dataset.ekind && sheetState){ sheetState.f = t.dataset.ekind === "future"; t.parentNode.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === t)); return; }
-    const act = t.dataset.act;
-    if (act === "back"){ view = { name: "home" }; render(); window.scrollTo(0, 0); }
-    else if (act === "close"){ closeSheet(); }
-    else if (act === "editSubject"){ openSubjectSheet(); }
-    else if (act === "backup"){ openBackupSheet(); }
-    else if (act === "copyBackup"){
-      const ta = $("#bk"); const txt = ta.value;
-      const done = () => { t.textContent = "Copié ✓"; };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => { ta.select(); document.execCommand("copy"); done(); });
-      else { ta.select(); document.execCommand("copy"); done(); }
-    }
-    else if (act === "restore" && sheetState){
-      let d; try { d = JSON.parse($("#bk").value); } catch(_){ d = null; }
-      if (!valid(d) || !d.subjects.every(x => x && typeof x.name === "string" && Array.isArray(x.grades))){ $("#bkerr").textContent = "Code invalide."; return; }
-      if (!sheetState.armed){ sheetState.armed = true; t.classList.add("armed"); t.classList.add("danger"); t.textContent = "Confirmer (remplace tes notes actuelles)"; return; }
-      data = { subjects: d.subjects.map(x => ({ id: x.id || uid(), name: x.name, grades: x.grades.filter(g => isFinite(g.v) && isFinite(g.w)).map(g => ({ id: g.id || uid(), v: +g.v, w: +g.w, f: !!g.f })) })) };
-      view = { name: "home" }; persist(); closeSheet(); render();
-    }
-    else if (act === "delGrade" && sheetState){
-      if (!sheetState.armed){ sheetState.armed = true; t.classList.add("armed"); t.textContent = "Confirmer la suppression"; return; }
-      const s = data.subjects.find(x => x.id === view.id);
-      s.grades = s.grades.filter(g => g.id !== sheetState.gid);
-      persist(); closeSheet(); render();
-    }
-    else if (act === "delSubject" && sheetState){
-      if (!sheetState.armed){ sheetState.armed = true; t.classList.add("armed"); t.textContent = "Confirmer (supprime aussi ses notes)"; return; }
-      data.subjects = data.subjects.filter(x => x.id !== view.id);
-      view = { name: "home" }; persist(); closeSheet(); render();
-    }
+function normalize(d){
+  if (!d || !Array.isArray(d.subjects)) return null;
+  const o = emptyState();
+  const st = d.settings || {};
+  o.settings = { dec: st.dec === 2 ? 2 : 1, goal: nG(st.goal) };
+  o.extras = (Array.isArray(d.extras) ? d.extras : []).filter(x => x && typeof x.name === "string")
+    .map(x => ({ id: x.id || uid(), name: nStr(x.name, 100), p: isFinite(+x.p) && x.p !== null ? Math.max(0, Math.min(100, +x.p)) : null }));
+  o.subjects = d.subjects.filter(s => s && typeof s.name === "string").map(s => {
+    let subs = Array.isArray(s.subs) ? s.subs
+      : Array.isArray(s.grades) ? [{ name: "Notes", w: 1, evals: s.grades.map((g, i) => ({ name: "Note " + (i + 1), v: g.v, w: g.w, f: g.f })) }]
+      : [];
+    const ex = s.exam || {};
+    return {
+      id: s.id || uid(), code: nStr(s.code, 3), name: nStr(s.name, 140), w: nW(s.w, 1),
+      exam: { on: !!ex.on, name: nStr(ex.name, 100, "Examen"), v: nG(ex.v), f: !!ex.f, date: nDate(ex.date) },
+      subs: subs.filter(x => x && typeof x.name === "string").map(x => ({
+        id: x.id || uid(), name: nStr(x.name, 100), w: nW(x.w, 1),
+        evals: (Array.isArray(x.evals) ? x.evals : []).filter(e => e && typeof e === "object").map(e => ({
+          id: e.id || uid(), name: nStr(e.name, 160, "Évaluation") || "Évaluation", date: nDate(e.date), w: nW(e.w, 1), v: nG(e.v), f: !!e.f, ne: !!e.ne
+        }))
+      }))
+    };
   });
-
-  document.addEventListener("submit", e => {
-    e.preventDefault();
-    const f = e.target;
-    if (f.id === "addSubject"){
-      const name = $("#subName").value.trim(); if (!name) return;
-      data.subjects.push({ id: uid(), name, grades: [] });
-      persist(); render();
-    }
-    else if (f.id === "addGrade"){
-      const v = num($("#gv").value), w = num($("#gw").value);
-      const err = $("#gerr");
-      if (!(v >= 1 && v <= 6)){ err.textContent = "La note doit être entre 1 et 6."; return; }
-      if (!(w > 0 && w <= 100)){ err.textContent = "Le coef. doit être un nombre positif."; return; }
-      addCoef = $("#gw").value;
-      const s = data.subjects.find(x => x.id === view.id);
-      s.grades.push({ id: uid(), v, w, f: addKind === "future" });
-      persist(); render();
-      const gv = $("#gv"); if (gv) gv.focus();
-    }
-    else if (f.id === "editGrade" && sheetState){
-      const v = num($("#ev").value), w = num($("#ew").value);
-      if (!(v >= 1 && v <= 6)){ $("#eerr").textContent = "La note doit être entre 1 et 6."; return; }
-      if (!(w > 0 && w <= 100)){ $("#eerr").textContent = "Le coef. doit être un nombre positif."; return; }
-      const s = data.subjects.find(x => x.id === view.id);
-      const g = s.grades.find(x => x.id === sheetState.gid);
-      g.v = v; g.w = w; g.f = sheetState.f;
-      persist(); closeSheet(); render();
-    }
-    else if (f.id === "editSubject"){
-      const name = $("#sn").value.trim(); if (!name) return;
-      const s = data.subjects.find(x => x.id === view.id); s.name = name;
-      persist(); closeSheet(); render();
-    }
-  });
-
-  document.addEventListener("input", e => {
-    if (e.target.id === "tg"){ target = e.target.value; updateNeed(); }
-    else if (e.target.id === "tc"){ nextCoef = e.target.value; updateNeed(); }
-    else if (e.target.id === "gv" || e.target.id === "gw"){ const er = $("#gerr"); if (er) er.textContent = ""; }
-  });
-
-  loadLocal();
-  // Import depuis un lien perso : ...#n=<base64url du JSON>. Le contenu après # n'est jamais envoyé au serveur.
+  o.updatedAt = +d.updatedAt || 0;
+  return o;
+}
+function load(){
+  try { const s = localStorage.getItem(KEY); if (s){ const d = normalize(JSON.parse(s)); if (d){ S = d; return; } } } catch(e){}
+  try { const s = localStorage.getItem(OLD); if (s){ const d = normalize(JSON.parse(s)); if (d){ S = d; save(); } } } catch(e){}
+}
+function save(){
+  S.updatedAt = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ toast("Impossible d'enregistrer sur cet appareil"); }
+}
+function importFromLink(){
+  const m = location.hash.match(/^#([nd])=([A-Za-z0-9_-]+)$/);
+  if (!m) return;
   try {
-    const m = location.hash.match(/^#n=([A-Za-z0-9_-]+)$/);
-    if (m){
-      const key = "moyennes-imported";
-      if (localStorage.getItem(key) !== m[1].slice(0, 64)){
-        const b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
-        const bin = atob(b64 + "===".slice((b64.length + 3) % 4));
-        const d = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))));
-        if (valid(d) && d.subjects.every(x => x && typeof x.name === "string" && Array.isArray(x.grades))){
-          data = { subjects: d.subjects.map(x => ({ id: uid(), name: x.name, grades: x.grades.filter(g => isFinite(g.v) && isFinite(g.w)).map(g => ({ id: uid(), v: +g.v, w: +g.w, f: !!g.f })) })), updatedAt: Date.now() };
-          saveLocal();
-          localStorage.setItem(key, m[1].slice(0, 64));
-        }
-      }
-      history.replaceState(null, "", location.pathname + location.search);
-    }
+    const sig = m[1] === "n" ? m[2].slice(0, 64) : "d:" + m[2].slice(0, 64) + ":" + m[2].length;
+    if (localStorage.getItem(IMP) === sig) return;
+    const b64 = m[2].replace(/-/g, "+").replace(/_/g, "/");
+    const bin = atob(b64 + "===".slice((b64.length + 3) % 4));
+    const d = normalize(JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)))));
+    if (d){ S = d; save(); localStorage.setItem(IMP, sig); setTimeout(() => toast("Tes notes sont chargées"), 300); }
   } catch(e){}
-  render();
+}
+
+/* ---------- maths (same rules as the school portal) ---------- */
+function wavg(pairs){ let s = 0, w = 0; for (const [v, ww] of pairs){ if (ww > 0){ s += v * ww; w += ww; } } return w > 0 ? s / w : null; }
+const counts = e => e.v != null && !e.ne;
+const subAvg = (x, fut) => wavg(x.evals.filter(e => counts(e) && (fut || !e.f)).map(e => [e.v, e.w]));
+function contAvg(s, fut){ const p = []; for (const x of s.subs){ const a = subAvg(x, fut); if (a != null) p.push([a, x.w]); } return wavg(p); }
+const examVal = (s, fut) => s.exam.on && s.exam.v != null && (fut || !s.exam.f) ? s.exam.v : null;
+function domAvg(s, fut){ const c = contAvg(s, fut), e = examVal(s, fut); if (c == null) return e; if (e == null) return c; return (c + e) / 2; }
+function genAvg(fut, list = S.subjects){ const p = []; for (const s of list){ const a = domAvg(s, fut); if (a != null) p.push([a, s.w]); } return wavg(p); }
+const subHasPlan = x => x.evals.some(e => e.f && counts(e));
+const hasPlan = s => (s.exam.on && s.exam.v != null && s.exam.f) || s.subs.some(subHasPlan);
+const anyPlan = () => S.subjects.some(hasPlan);
+
+/* ---------- formatting ---------- */
+function fx(x, dec = S.settings.dec){ if (x == null || !isFinite(x)) return "–"; const p = 10 ** dec; return (Math.round(x * p + 1e-9) / p).toFixed(dec); }
+function fg(v){ const r = Math.round(v * 100) / 100; return Math.abs(r * 10 - Math.round(r * 10)) < 1e-9 ? r.toFixed(1) : r.toFixed(2); }
+const fw = w => String(Math.round(w * 100) / 100);
+const tone = x => x == null ? "" : (x >= 4 ? "pass" : "fail");
+const fdate = d => { if (!d) return ""; const [y, m, dd] = d.split("-"); return dd + "." + m + "." + y; };
+const findDom = id => S.subjects.find(s => s.id === id);
+
+function scale(cur, fut, big){
+  const pos = v => ((Math.max(1, Math.min(6, v)) - 1) / 5 * 100).toFixed(2) + "%";
+  let h = `<div class="scale${big ? " big" : ""}" aria-hidden="true"><div class="rail"></div>`;
+  if (cur != null) h += `<div class="fill ${tone(cur)}" style="width:${pos(cur)}"></div>`;
+  h += `<div class="passline" style="left:${pos(4)}"></div>`;
+  if (big) h += [1,2,3,4,5,6].map(n => `<span class="tick${n === 4 ? " four" : ""}" style="left:${pos(n)}">${n}</span>`).join("");
+  if (fut != null && (cur == null || Math.abs(fut - cur) > 0.004)){
+    if (cur != null){ const a = Math.min(cur, fut), b = Math.max(cur, fut); h += `<div class="planseg" style="left:${pos(a)};width:calc(${pos(b)} - ${pos(a)})"></div>`; }
+    h += `<div class="dot plan" style="left:${pos(fut)}"></div>`;
+  }
+  if (cur != null) h += `<div class="dot ${tone(cur)}" style="left:${pos(cur)}"></div>`;
+  return h + `</div>`;
+}
+
+/* ---------- views ---------- */
+function render(){
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.tab === nav.tab));
+  if (nav.dom && !findDom(nav.dom)) nav.dom = null;
+  let h;
+  if (nav.tab === "hist") h = histHTML();
+  else if (nav.tab === "set") h = setHTML();
+  else h = nav.dom ? domHTML(findDom(nav.dom)) : homeHTML();
+  $("#view").innerHTML = h;
+  if (nav.tab === "notes" && nav.dom) updateSim();
+}
+
+function homeHTML(){
+  const g = genAvg(false), gf = genAvg(true), plan = anyPlan(), goal = S.settings.goal;
+  const weak = S.subjects.filter(s => { const a = domAvg(s, false); return a != null && a < 4; });
+  let h = `<header class="top"><h1>Mes moyennes</h1></header>
+  <section class="hero">
+    <div class="hero-label">Moyenne générale</div>
+    <div class="hero-num ${tone(g)}">${fx(g, 2)}</div>
+    ${scale(g, plan ? gf : null, true)}
+    ${plan && gf != null ? `<p class="hero-foot">Avec tes prévisions : <strong>${fx(gf, 2)}</strong></p>` : ``}
+    ${goal != null && g != null ? `<p class="goal">Objectif ${fg(goal)} : <strong>${g >= goal ? "atteint" : "il manque " + fx(goal - g, 2)}</strong></p>` : ``}
+  </section>`;
+  if (weak.length) h += `<div class="alert"><b>Sous 4</b> : ${weak.map(s => `<button data-open="${s.id}">${esc(s.name)}</button> (${fx(domAvg(s, false))})`).join(", ")}</div>`;
+  h += `<h2 class="sec">Domaines</h2><div class="group">`;
+  if (!S.subjects.length) h += `<div class="empty">Aucun domaine. Ajoute ton premier domaine pour commencer.</div>`;
+  for (const s of S.subjects){
+    const a = domAvg(s, false), af = domAvg(s, true), p = hasPlan(s);
+    h += `<button class="drow" data-open="${s.id}"><span class="badge">${esc(s.code || "?")}</span>
+      <span class="dmain"><span class="dname">${esc(s.name)}</span>${scale(a, p ? af : null, false)}</span>
+      <span class="dnum"><span class="${tone(a)}">${fx(a)}</span>${p && af != null ? `<small class="plan">${fx(af)}</small>` : ``}</span></button>`;
+  }
+  h += `</div><button class="addline" data-act="newDom">Ajouter un domaine</button>`;
+  h += `<h2 class="sec">Autres évaluations</h2><div class="group">`;
+  for (const x of S.extras) h += `<button class="srow" data-extra="${x.id}"><span>${esc(x.name)}</span><span class="val">${x.p == null ? "–" : fw(x.p) + " %"}</span></button>`;
+  if (!S.extras.length) h += `<div class="empty">Mandats pratiques, UEP… en pourcentage.</div>`;
+  h += `</div><button class="addline" data-act="newExtra">Ajouter une évaluation en %</button>`;
+  return h;
+}
+
+function evalRow(e, s, x, withCtx){
+  let pill;
+  if (e.ne) pill = `<span class="pill ne">Non év.</span>`;
+  else if (e.v == null) pill = `<span class="pill none">–</span>`;
+  else pill = `<span class="pill ${e.f ? "plan" : tone(e.v)}">${fg(e.v)}</span>`;
+  const meta = [];
+  if (withCtx) meta.push(`<span class="hcode">${esc(s.code || s.name)}</span> ${esc(x ? x.name : "")}`);
+  meta.push(e.date ? fdate(e.date) : "sans date");
+  if (e.w != null) meta.push("coef " + fw(e.w));
+  if (e.f) meta.push("prévision");
+  const attrs = x ? `data-eval="${e.id}" data-esub="${x.id}" data-edom="${s.id}"` : `data-examdom="${s.id}"`;
+  return `<button class="erow" ${attrs}><span class="emain"><span class="ename">${esc(e.name)}</span><span class="emeta">${meta.join(", ")}</span></span>${pill}</button>`;
+}
+
+function domHTML(s){
+  const a = domAvg(s, false), af = domAvg(s, true), p = hasPlan(s), c = contAvg(s, false), ev = examVal(s, false);
+  let h = `<div class="navbar"><button data-act="back"><svg width="12" height="20" viewBox="0 0 12 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2L2 10l8 8"/></svg>&nbsp;Domaines</button><button data-act="editDom">Modifier</button></div>
+  <header class="dhead"><span class="badge lg">${esc(s.code || "?")}</span><h1 class="dtitle">${esc(s.name)}</h1></header>
+  <section class="hero">
+    <div class="hero-row"><div><div class="hero-label">Moyenne</div><div class="hero-num md ${tone(a)}">${fx(a)}</div></div>
+    ${p ? `<div class="right"><div class="hero-label">Avec prévisions</div><div class="hero-num md plan">${fx(af)}</div></div>` : ``}</div>
+    ${scale(a, p ? af : null, true)}
+    ${s.exam.on ? `<div class="split"><div><small>Notes de cours, 50 %</small><b class="${tone(c)}">${fx(c)}</b></div><div><small>Examen, 50 %</small><b class="${tone(ev)}">${ev != null ? fg(ev) : "–"}</b></div></div>` : ``}
+  </section>`;
+  for (const x of s.subs){
+    const sa = subAvg(x, false), sf = subAvg(x, true), sp = subHasPlan(x);
+    const evs = [...x.evals].sort((m, n) => (m.date || "9999") < (n.date || "9999") ? -1 : (m.date || "9999") > (n.date || "9999") ? 1 : 0);
+    h += `<section class="subblock"><div class="subhead"><button class="subname" data-sub="${x.id}"><span>${esc(x.name)}</span><span class="coef">coef ${fw(x.w)}</span></button>
+      <span class="subavg ${tone(sa)}">${fx(sa)}${sp && sf != null ? ` <small class="plan">${fx(sf)}</small>` : ``}</span></div>
+      <div class="group">${evs.map(e => evalRow(e, s, x, false)).join("")}<button class="addrow" data-adde="${x.id}">Ajouter une note</button></div></section>`;
+  }
+  h += `<button class="addline" data-act="newSub">Ajouter une sous-branche</button>`;
+  if (s.exam.on){
+    h += `<section class="subblock"><div class="subhead"><span class="subname"><span>${esc(s.exam.name)}</span><span class="coef">50 % de la moyenne</span></span></div><div class="group">`;
+    h += s.exam.v != null ? evalRow({ name: "Note d'examen", date: s.exam.date, w: null, v: s.exam.v, f: s.exam.f, ne: false }, s, null, false)
+                          : `<button class="addrow" data-examdom="${s.id}">Ajouter la note d'examen</button>`;
+    h += `</div></section>`;
+  }
+  h += simHTML(s);
+  return h;
+}
+
+function simOpts(s){
+  const o = [];
+  if (s.exam.on) o.push(["exam", s.exam.name || "Examen"]);
+  for (const x of s.subs) if (x.w > 0) o.push([x.id, x.name]);
+  return o;
+}
+function simHTML(s){
+  const opts = simOpts(s);
+  if (!opts.length) return "";
+  const st = sim[s.id] || (sim[s.id] = { where: opts[0][0], coef: "1", x: 4, target: S.settings.goal != null ? fg(S.settings.goal) : "4" });
+  if (!opts.some(o => o[0] === st.where)) st.where = opts[0][0];
+  return `<h2 class="sec">Simulation</h2><section class="card">
+    <div class="simgrid">
+      <label class="lbl">Prochaine note en<select class="inp" id="simWhere">${opts.map(o => `<option value="${o[0]}"${o[0] === st.where ? " selected" : ""}>${esc(o[1])}</option>`).join("")}</select></label>
+      <label class="lbl" id="simCoefWrap"${st.where === "exam" ? " hidden" : ""}>Coef.<input class="inp" id="simCoef" inputmode="decimal" value="${esc(st.coef)}"></label>
+    </div>
+    <div class="slider">
+      <div class="sline"><span>Si j'ai</span><strong id="simX">${fg(st.x)}</strong></div>
+      <input type="range" id="simRange" min="1" max="6" step="0.1" value="${st.x}" aria-label="Note simulée">
+      <div class="sres" id="simRes"></div>
+    </div>
+    <div class="need">
+      <label class="lbl">Pour avoir<input class="inp" id="simTarget" inputmode="decimal" value="${esc(st.target)}"></label>
+      <div class="needout" id="simNeed"></div>
+    </div>
+    ${hasPlan(s) ? `<p class="hint">Tes prévisions sont comptées dans la simulation.</p>` : ``}
+  </section>`;
+}
+function hypo(s, st, x){
+  const c = clone(s);
+  if (st.where === "exam"){ c.exam.v = x; c.exam.f = true; }
+  else { const sub = c.subs.find(y => y.id === st.where); if (!sub) return null; const w = num(st.coef); sub.evals.push({ v: x, w: w > 0 ? w : 1, f: true, ne: false }); }
+  return domAvg(c, true);
+}
+function updateSim(){
+  const s = findDom(nav.dom); const st = s && sim[s.id]; if (!st || !$("#simRes")) return;
+  const r = hypo(s, st, st.x);
+  $("#simX").textContent = fg(st.x);
+  $("#simRes").innerHTML = `ta moyenne du domaine passe à <strong class="${tone(r)}">${fx(r, 2)}</strong>`;
+  const out = $("#simNeed"), T = num(st.target);
+  if (!(T >= 1 && T <= 6)){ out.textContent = "Entre une moyenne entre 1 et 6."; return; }
+  const f1 = hypo(s, st, 1), f6 = hypo(s, st, 6);
+  if (f1 == null || f6 == null || Math.abs(f6 - f1) < 1e-9){ out.textContent = ""; return; }
+  const need = 1 + (T - f1) * 5 / (f6 - f1);
+  if (need > 6) out.innerHTML = `il faudrait <strong class="fail">${fx(need, 2)}</strong>, pas atteignable avec une seule note.`;
+  else if (need <= 1) out.innerHTML = `<strong class="pass">c'est assuré</strong>, même avec un 1.`;
+  else out.innerHTML = `il te faut au moins <strong>${(Math.ceil(need * 10 - 1e-9) / 10).toFixed(1)}</strong>`;
+}
+
+function histHTML(){
+  const all = [];
+  for (const s of S.subjects){
+    for (const x of s.subs) for (const e of x.evals) all.push({ e, s, x });
+    if (s.exam.on && s.exam.v != null) all.push({ e: { id: "exam", name: s.exam.name, date: s.exam.date, w: null, v: s.exam.v, f: s.exam.f, ne: false }, s, x: null });
+  }
+  let h = `<header class="top"><h1>Historique</h1></header>` + chartHTML();
+  if (!all.length) return h + `<div class="group" style="margin-top:16px"><div class="empty">Tes notes apparaîtront ici, de la plus récente à la plus ancienne.</div></div>`;
+  all.sort((a, b) => (b.e.date || "") < (a.e.date || "") ? -1 : (b.e.date || "") > (a.e.date || "") ? 1 : 0);
+  let cur = null, open = false;
+  for (const it of all){
+    const k = it.e.date ? it.e.date.slice(0, 7) : "";
+    if (k !== cur){
+      if (open) h += `</div>`;
+      const label = k ? new Date(k + "-15").toLocaleDateString("fr-CH", { month: "long", year: "numeric" }) : "Sans date";
+      h += `<h2 class="month">${label.charAt(0).toUpperCase() + label.slice(1)}</h2><div class="group">`;
+      cur = k; open = true;
+    }
+    h += evalRow(it.e, it.s, it.x, true);
+  }
+  return h + (open ? `</div>` : ``);
+}
+function chartHTML(){
+  const dates = new Set();
+  for (const s of S.subjects){
+    for (const x of s.subs) for (const e of x.evals) if (counts(e) && !e.f && e.date) dates.add(e.date);
+    if (s.exam.on && s.exam.v != null && !s.exam.f && s.exam.date) dates.add(s.exam.date);
+  }
+  const ds = [...dates].sort();
+  const pts = [];
+  for (const d of ds){
+    const list = S.subjects.map(s => ({ ...s,
+      exam: { ...s.exam, v: s.exam.date && s.exam.date <= d ? s.exam.v : null },
+      subs: s.subs.map(x => ({ ...x, evals: x.evals.filter(e => e.date && e.date <= d) })) }));
+    const g = genAvg(false, list); if (g != null) pts.push([d, g]);
+  }
+  if (pts.length < 2) return `<section class="chart"><div class="hero-label">Évolution de la moyenne générale</div><p class="hint">La courbe apparaît dès que tu as des notes à deux dates différentes.</p></section>`;
+  const W = 320, H = 140, t = s => new Date(s + "T12:00:00").getTime();
+  const t0 = t(pts[0][0]), t1 = t(pts[pts.length - 1][0]);
+  const vals = pts.map(p => p[1]);
+  const lo = Math.max(1, Math.min(3.5, Math.floor((Math.min(...vals) - .3) * 2) / 2)), hi = Math.min(6, Math.max(5.5, Math.ceil((Math.max(...vals) + .3) * 2) / 2));
+  const X = d => ((t(d) - t0) / Math.max(1, t1 - t0)) * W, Y = v => H - (v - lo) / (hi - lo) * H;
+  const path = pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join(" ");
+  const last = pts[pts.length - 1];
+  let grid = "";
+  for (let v = Math.ceil(lo); v <= hi; v++) grid += `<line x1="0" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--hair)" ${v === 4 ? `stroke="var(--ink)" stroke-opacity=".5" stroke-dasharray="4 4"` : ``}/><text x="${W + 6}" y="${Y(v) + 4}" font-size="11" fill="var(--muted)">${v}</text>`;
+  return `<section class="chart"><div class="hero-label">Évolution de la moyenne générale</div>
+    <svg viewBox="-4 -10 ${W + 24} ${H + 20}" role="img" aria-label="Moyenne générale de ${fx(pts[0][1], 2)} à ${fx(last[1], 2)}">
+      ${grid}
+      <path d="${path}" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${pts.map(p => `<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="2.6" fill="var(--ink)"/>`).join("")}
+      <circle cx="${X(last[0])}" cy="${Y(last[1])}" r="6" fill="var(--${last[1] >= 4 ? "pass" : "fail"})" stroke="var(--surface)" stroke-width="3"/>
+    </svg>
+    <div class="cap"><span>${fdate(pts[0][0])}</span><span>${fdate(last[0])} : ${fx(last[1], 2)}</span></div></section>`;
+}
+
+function setHTML(){
+  const n = S.subjects.reduce((k, s) => k + s.subs.reduce((j, x) => j + x.evals.length, 0), 0);
+  return `<header class="top"><h1>Réglages</h1></header>
+  <h2 class="sec">Affichage des moyennes</h2>
+  <div class="group"><div class="seg" role="group" aria-label="Décimales">
+    <button data-dec="1" class="${S.settings.dec === 1 ? "on" : ""}">Comme l'école (4.7)</button>
+    <button data-dec="2" class="${S.settings.dec === 2 ? "on" : ""}">Précis (4.71)</button></div></div>
+  <h2 class="sec">Objectif</h2>
+  <div class="group"><button class="srow" data-act="goal"><span>Moyenne générale visée</span><span class="val">${S.settings.goal != null ? fg(S.settings.goal) : "aucun"}</span></button></div>
+  <h2 class="sec">Sauvegarde</h2>
+  <div class="group">
+    <button class="srow" data-act="copyBackup"><span>Copier le code de sauvegarde</span><span class="val">${n} notes</span></button>
+    <button class="srow" data-act="restore"><span>Restaurer depuis un code</span></button>
+    <button class="srow" data-act="copySummary"><span>Copier un résumé de mes moyennes</span></button>
+  </div>
+  <p class="note">Tes notes restent sur ce téléphone. Garde le code de sauvegarde dans Notes ou par mail : il permet de tout récupérer.</p>
+  <h2 class="sec">Zone sensible</h2>
+  <div class="group"><button class="srow danger" data-act="wipe">Effacer toutes les notes</button></div>`;
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html, state){ sheet = state; $("#sheetBody").innerHTML = `<div class="grab"></div>` + html; $("#sheet").hidden = false; }
+function closeSheet(){ sheet = null; $("#sheet").hidden = true; $("#sheetBody").innerHTML = ""; }
+const sw = (id, label, on, hint) => `<label class="switch"><span>${label}${hint ? `<small>${hint}</small>` : ""}</span><input type="checkbox" id="${id}"${on ? " checked" : ""}><span class="knob"></span></label>`;
+const actions = (save, del) => `<div class="err" id="ferr"></div><div class="actions"><button class="btn primary" type="submit">${save}</button>${del ? `<button class="btn danger" type="button" data-act="del">${del}</button>` : ""}<button class="btn quiet" type="button" data-act="close">Annuler</button></div>`;
+
+function evalSheet(domId, subId, evalId){
+  const s = findDom(domId), x = s && s.subs.find(y => y.id === subId); if (!x) return;
+  const e = evalId ? x.evals.find(y => y.id === evalId) : null;
+  openSheet(`<h2>${e ? "Modifier la note" : "Nouvelle note"}</h2><p class="ctx">${esc(s.code)} ${esc(x.name)}</p>
+    <form id="fEval" class="fstack" autocomplete="off">
+      <label class="lbl">Nom de l'évaluation<input class="inp" id="fName" value="${e ? esc(e.name) : ""}" placeholder="Ex. Test chapitre 2" maxlength="160"></label>
+      <label class="lbl">Date<input class="inp" type="date" id="fDate" value="${e ? e.date : today()}"></label>
+      <div class="row2">
+        <label class="lbl">Note<input class="inp" id="fV" inputmode="decimal" value="${e && e.v != null ? fg(e.v) : ""}" placeholder="1 à 6"></label>
+        <label class="lbl">Coefficient<input class="inp" id="fW" inputmode="decimal" value="${e ? fw(e.w) : "1"}"></label>
+      </div>
+      ${sw("fF", "Prévision", e ? e.f : false, "Note que tu penses avoir, pas encore reçue")}
+      ${sw("fNe", "Non évaluée", e ? e.ne : false, "Ne compte pas dans la moyenne")}
+      ${actions(e ? "Enregistrer" : "Ajouter la note", e ? "Supprimer la note" : "")}
+    </form>`, { type: "eval", domId, subId, evalId });
+  if (!e) $("#fV").focus();
+}
+function examSheet(domId){
+  const s = findDom(domId); if (!s) return;
+  openSheet(`<h2>Note d'examen</h2><p class="ctx">${esc(s.exam.name)}, 50 % de la moyenne</p>
+    <form id="fExam" class="fstack" autocomplete="off">
+      <div class="row2"><label class="lbl">Note<input class="inp" id="fV" inputmode="decimal" value="${s.exam.v != null ? fg(s.exam.v) : ""}" placeholder="1 à 6"></label>
+      <label class="lbl">Date<input class="inp" type="date" id="fDate" value="${s.exam.date || today()}"></label></div>
+      ${sw("fF", "Prévision", s.exam.f, "Note que tu penses avoir")}
+      ${actions("Enregistrer", s.exam.v != null ? "Effacer la note" : "")}
+    </form>`, { type: "exam", domId });
+  if (s.exam.v == null) $("#fV").focus();
+}
+function subSheet(domId, subId){
+  const s = findDom(domId); if (!s) return;
+  const x = subId ? s.subs.find(y => y.id === subId) : null;
+  openSheet(`<h2>${x ? "Modifier la sous-branche" : "Nouvelle sous-branche"}</h2><p class="ctx">${esc(s.code)} ${esc(s.name)}</p>
+    <form id="fSub" class="fstack" autocomplete="off">
+      <label class="lbl">Nom<input class="inp" id="fName" value="${x ? esc(x.name) : ""}" placeholder="Ex. DCOa3 (BD)" maxlength="100"></label>
+      <label class="lbl">Coefficient dans le domaine<input class="inp" id="fW" inputmode="decimal" value="${x ? fw(x.w) : "1"}"></label>
+      ${actions(x ? "Enregistrer" : "Ajouter", x ? "Supprimer la sous-branche et ses notes" : "")}
+    </form>`, { type: "sub", domId, subId });
+}
+function domSheet(domId){
+  const s = domId ? findDom(domId) : null;
+  openSheet(`<h2>${s ? "Modifier le domaine" : "Nouveau domaine"}</h2>
+    <form id="fDom" class="fstack" autocomplete="off">
+      <div class="row2" style="grid-template-columns:90px 1fr">
+        <label class="lbl">Lettre<input class="inp" id="fCode" value="${s ? esc(s.code) : ""}" maxlength="3" placeholder="F"></label>
+        <label class="lbl">Coef. général<input class="inp" id="fW" inputmode="decimal" value="${s ? fw(s.w) : "1"}"></label>
+      </div>
+      <label class="lbl">Nom<input class="inp" id="fName" value="${s ? esc(s.name) : ""}" maxlength="140" placeholder="Ex. Allemand"></label>
+      ${sw("fEx", "Examen à 50 %", s ? s.exam.on : true, "L'examen compte pour la moitié de la moyenne")}
+      <label class="lbl">Nom de l'examen<input class="inp" id="fExName" value="${s ? esc(s.exam.name) : "Examen"}" maxlength="100"></label>
+      ${actions(s ? "Enregistrer" : "Créer le domaine", s ? "Supprimer le domaine et ses notes" : "")}
+    </form>`, { type: "dom", domId });
+}
+function extraSheet(id){
+  const x = id ? S.extras.find(y => y.id === id) : null;
+  openSheet(`<h2>${x ? "Modifier" : "Nouvelle évaluation en %"}</h2>
+    <form id="fExtra" class="fstack" autocomplete="off">
+      <label class="lbl">Nom<input class="inp" id="fName" value="${x ? esc(x.name) : ""}" maxlength="100"></label>
+      <label class="lbl">Pourcentage<input class="inp" id="fP" inputmode="decimal" value="${x && x.p != null ? fw(x.p) : ""}" placeholder="0 à 100"></label>
+      ${actions(x ? "Enregistrer" : "Ajouter", x ? "Supprimer" : "")}
+    </form>`, { type: "extra", id });
+}
+function goalSheet(){
+  openSheet(`<h2>Moyenne générale visée</h2><p class="ctx">Laisse vide pour ne pas avoir d'objectif.</p>
+    <form id="fGoal" class="fstack" autocomplete="off">
+      <label class="lbl">Objectif<input class="inp" id="fV" inputmode="decimal" value="${S.settings.goal != null ? fg(S.settings.goal) : ""}" placeholder="Ex. 5"></label>
+      ${actions("Enregistrer")}
+    </form>`, { type: "goal" });
+  $("#fV").focus();
+}
+function restoreSheet(){
+  openSheet(`<h2>Restaurer</h2><p class="ctx">Colle ton code de sauvegarde. Il remplace toutes les notes actuelles.</p>
+    <form id="fRestore" class="fstack" autocomplete="off">
+      <textarea class="inp" id="fCode" placeholder="Code de sauvegarde"></textarea>
+      <div class="err" id="ferr"></div>
+      <div class="actions"><button class="btn primary" type="submit" id="restoreBtn">Restaurer</button><button class="btn quiet" type="button" data-act="close">Annuler</button></div>
+    </form>`, { type: "restore", armed: false });
+}
+
+/* ---------- actions ---------- */
+let toastT = null;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2000); }
+function copy(text, done){
+  const fallback = () => { const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); done(); } catch(e){ toast("Copie impossible"); } ta.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+}
+function summary(){
+  const L = [`Moyenne générale : ${fx(genAvg(false), 2)}` + (anyPlan() ? ` (avec prévisions ${fx(genAvg(true), 2)})` : "")];
+  for (const s of S.subjects) L.push(`${s.code ? s.code + ". " : ""}${s.name} : ${fx(domAvg(s, false))}`);
+  for (const x of S.extras) L.push(`${x.name} : ${x.p == null ? "–" : fw(x.p) + " %"}`);
+  return L.join("\n");
+}
+function armed(btn, label){
+  if (btn.dataset.armed){ return true; }
+  btn.dataset.armed = "1"; btn.classList.add("armed"); btn.textContent = label; return false;
+}
+const go = (patch) => { Object.assign(nav, patch); render(); window.scrollTo(0, 0); };
+
+document.addEventListener("click", ev => {
+  const t = ev.target.closest("button, .backdrop"); if (!t) return;
+  const d = t.dataset;
+  if (d.tab){ go({ tab: d.tab, dom: d.tab === "notes" && nav.tab === "notes" ? null : nav.dom }); return; }
+  if (d.open){ go({ tab: "notes", dom: d.open }); return; }
+  if (d.eval){ evalSheet(d.edom, d.esub, d.eval); return; }
+  if (d.adde){ evalSheet(nav.dom, d.adde, null); return; }
+  if (d.examdom){ examSheet(d.examdom); return; }
+  if (d.sub){ subSheet(nav.dom, d.sub); return; }
+  if (d.extra){ extraSheet(d.extra); return; }
+  if (d.dec){ S.settings.dec = +d.dec; save(); render(); return; }
+  switch (d.act){
+    case "back": go({ dom: null }); break;
+    case "close": closeSheet(); break;
+    case "newDom": domSheet(null); break;
+    case "editDom": domSheet(nav.dom); break;
+    case "newSub": subSheet(nav.dom, null); break;
+    case "newExtra": extraSheet(null); break;
+    case "goal": goalSheet(); break;
+    case "restore": restoreSheet(); break;
+    case "copyBackup": copy(JSON.stringify({ v: 2, subjects: S.subjects, extras: S.extras, settings: S.settings }), () => toast("Code de sauvegarde copié")); break;
+    case "copySummary": copy(summary(), () => toast("Résumé copié")); break;
+    case "wipe":
+      if (!armed(t, "Toucher encore pour tout effacer")) return;
+      S = emptyState(); save(); nav.dom = null; render(); toast("Toutes les notes sont effacées"); break;
+    case "del": onDelete(t); break;
+  }
+});
+
+function onDelete(btn){
+  if (!sheet) return;
+  if (!armed(btn, "Confirmer")) return;
+  const s = sheet.domId ? findDom(sheet.domId) : null;
+  if (sheet.type === "eval"){ const x = s.subs.find(y => y.id === sheet.subId); x.evals = x.evals.filter(e => e.id !== sheet.evalId); }
+  else if (sheet.type === "exam"){ s.exam.v = null; s.exam.f = false; s.exam.date = ""; }
+  else if (sheet.type === "sub"){ s.subs = s.subs.filter(x => x.id !== sheet.subId); }
+  else if (sheet.type === "dom"){ S.subjects = S.subjects.filter(x => x.id !== sheet.domId); nav.dom = null; }
+  else if (sheet.type === "extra"){ S.extras = S.extras.filter(x => x.id !== sheet.id); }
+  save(); closeSheet(); render();
+}
+
+const fail = msg => { $("#ferr").textContent = msg; };
+document.addEventListener("submit", ev => {
+  ev.preventDefault();
+  if (!sheet) return;
+  const s = sheet.domId ? findDom(sheet.domId) : null;
+  const val = id => ($("#" + id) || {}).value || "";
+  const chk = id => !!($("#" + id) || {}).checked;
+  switch (sheet.type){
+    case "eval": {
+      const ne = chk("fNe"), v = num(val("fV")), w = num(val("fW"));
+      if (!ne && !(v >= 1 && v <= 6)) return fail("Entre une note entre 1 et 6.");
+      if (!(w >= 0 && w <= 100)) return fail("Le coefficient doit être un nombre positif.");
+      const x = s.subs.find(y => y.id === sheet.subId);
+      const data = { name: val("fName").trim() || "Évaluation", date: nDate(val("fDate")), w, v: v >= 1 && v <= 6 ? Math.round(v * 100) / 100 : null, f: chk("fF"), ne };
+      if (sheet.evalId) Object.assign(x.evals.find(e => e.id === sheet.evalId), data); else x.evals.push({ id: uid(), ...data });
+      break;
+    }
+    case "exam": {
+      const v = num(val("fV"));
+      if (!(v >= 1 && v <= 6)) return fail("Entre une note entre 1 et 6.");
+      Object.assign(s.exam, { v: Math.round(v * 100) / 100, f: chk("fF"), date: nDate(val("fDate")) });
+      break;
+    }
+    case "sub": {
+      const name = val("fName").trim(), w = num(val("fW"));
+      if (!name) return fail("Donne un nom à la sous-branche.");
+      if (!(w >= 0 && w <= 100)) return fail("Le coefficient doit être un nombre positif.");
+      if (sheet.subId) Object.assign(s.subs.find(y => y.id === sheet.subId), { name, w }); else s.subs.push({ id: uid(), name, w, evals: [] });
+      break;
+    }
+    case "dom": {
+      const name = val("fName").trim(), w = num(val("fW"));
+      if (!name) return fail("Donne un nom au domaine.");
+      if (!(w >= 0 && w <= 100)) return fail("Le coefficient doit être un nombre positif.");
+      const patch = { name, code: val("fCode").trim().slice(0, 3), w };
+      const exam = { on: chk("fEx"), name: val("fExName").trim() || "Examen" };
+      if (s){ Object.assign(s, patch); Object.assign(s.exam, exam); }
+      else { const n = { id: uid(), ...patch, exam: { ...exam, v: null, f: false, date: "" }, subs: [{ id: uid(), name: "Notes", w: 1, evals: [] }] }; S.subjects.push(n); nav.dom = n.id; }
+      break;
+    }
+    case "extra": {
+      const name = val("fName").trim(), p = val("fP").trim() === "" ? null : num(val("fP"));
+      if (!name) return fail("Donne un nom.");
+      if (p !== null && !(p >= 0 && p <= 100)) return fail("Entre un pourcentage entre 0 et 100.");
+      if (sheet.id) Object.assign(S.extras.find(y => y.id === sheet.id), { name, p }); else S.extras.push({ id: uid(), name, p });
+      break;
+    }
+    case "goal": {
+      const raw = val("fV").trim(), v = num(raw);
+      if (raw && !(v >= 1 && v <= 6)) return fail("Entre une moyenne entre 1 et 6.");
+      S.settings.goal = raw ? Math.round(v * 100) / 100 : null;
+      break;
+    }
+    case "restore": {
+      let d = null; try { d = normalize(JSON.parse(val("fCode"))); } catch(e){}
+      if (!d) return fail("Ce code n'est pas valide. Copie-le en entier depuis ta sauvegarde.");
+      const b = $("#restoreBtn");
+      if (!armed(b, "Confirmer : remplacer mes notes")) return;
+      S = d; nav.dom = null; save(); closeSheet(); render(); toast("Notes restaurées");
+      return;
+    }
+  }
+  save(); closeSheet(); render();
+});
+
+document.addEventListener("input", ev => {
+  const id = ev.target.id, s = findDom(nav.dom), st = s && sim[s.id];
+  if (ev.target.closest(".sheet")){ const e = $("#ferr"); if (e) e.textContent = ""; return; }
+  if (!st) return;
+  if (id === "simRange"){ st.x = +ev.target.value; updateSim(); }
+  else if (id === "simCoef"){ st.coef = ev.target.value; updateSim(); }
+  else if (id === "simTarget"){ st.target = ev.target.value; updateSim(); }
+});
+document.addEventListener("change", ev => {
+  if (ev.target.id !== "simWhere") return;
+  const s = findDom(nav.dom), st = s && sim[s.id]; if (!st) return;
+  st.where = ev.target.value; $("#simCoefWrap").hidden = st.where === "exam"; updateSim();
+});
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && sheet) closeSheet(); });
+
+load();
+importFromLink();
+render();
 })();
 </script>
 </body>
