@@ -512,17 +512,18 @@ function importFromLink(){
 /* ---------- maths (same rules as the school portal) ---------- */
 function wavg(pairs){ let s = 0, w = 0; for (const [v, ww] of pairs){ if (ww > 0){ s += v * ww; w += ww; } } return w > 0 ? s / w : null; }
 const counts = e => e.v != null && !e.ne;
-const subAvg = (x, fut) => wavg(x.evals.filter(e => counts(e) && (fut || !e.f)).map(e => [e.v, e.w]));
-function contAvg(s, fut){ const p = []; for (const x of s.subs){ const a = subAvg(x, fut); if (a != null) p.push([a, x.w]); } return wavg(p); }
+const r1 = x => x == null ? null : Math.round(x * 10 + 1e-9) / 10;
+const subAvg = (x, fut) => r1(wavg(x.evals.filter(e => counts(e) && (fut || !e.f)).map(e => [e.v, e.w])));
+function contAvg(s, fut){ const p = []; for (const x of s.subs){ const a = subAvg(x, fut); if (a != null) p.push([a, x.w]); } return r1(wavg(p)); }
 const examVal = (s, fut) => s.exam.on && s.exam.v != null && (fut || !s.exam.f) ? s.exam.v : null;
-function domAvg(s, fut){ const c = contAvg(s, fut), e = examVal(s, fut); if (c == null) return e; if (e == null) return c; return (c + e) / 2; }
-function genAvg(fut, list = S.subjects){ const p = []; for (const s of list){ const a = domAvg(s, fut); if (a != null) p.push([a, s.w]); } return wavg(p); }
+function domAvg(s, fut){ const c = contAvg(s, fut), e = examVal(s, fut); if (c == null) return e; if (e == null) return c; return r1((c + e) / 2); }
+function genAvg(fut, list = S.subjects){ const p = []; for (const s of list){ const a = domAvg(s, fut); if (a != null) p.push([a, s.w]); } return r1(wavg(p)); }
 const subHasPlan = x => x.evals.some(e => e.f && counts(e));
 const hasPlan = s => (s.exam.on && s.exam.v != null && s.exam.f) || s.subs.some(subHasPlan);
 const anyPlan = () => S.subjects.some(hasPlan);
 
 /* ---------- formatting ---------- */
-function fx(x, dec = S.settings.dec){ if (x == null || !isFinite(x)) return "–"; const p = 10 ** dec; return (Math.round(x * p + 1e-9) / p).toFixed(dec); }
+function fx(x){ if (x == null || !isFinite(x)) return "–"; return (Math.round(x * 10 + 1e-9) / 10).toFixed(1); }
 function fg(v){ const r = Math.round(v * 100) / 100; return Math.abs(r * 10 - Math.round(r * 10)) < 1e-9 ? r.toFixed(1) : r.toFixed(2); }
 const fw = w => String(Math.round(w * 100) / 100);
 const tone = x => x == null ? "" : (x >= 4 ? "pass" : "fail");
@@ -702,10 +703,9 @@ function updateSim(){
   $("#simRes").innerHTML = subLine + `<span class="sres-row"><span>Moyenne du domaine</span><strong class="${tone(r)}">${fx(r, 2)}</strong></span>`;
   const out = $("#simNeed"), T = num(st.target);
   if (!(T >= 1 && T <= 6)){ out.textContent = "Entre une moyenne entre 1 et 6."; return; }
-  const f1 = hypo(s, st, 1), f6 = hypo(s, st, 6);
-  if (f1 == null || f6 == null || Math.abs(f6 - f1) < 1e-9){ out.textContent = ""; return; }
-  const need = 1 + (T - f1) * 5 / (f6 - f1);
-  if (need > 6) out.innerHTML = `il faudrait <strong class="fail">${fx(need, 2)}</strong>, pas atteignable avec une seule note.`;
+  const need = needGrade(s, st.where, st.coef, T);
+  if (need == null){ out.textContent = ""; return; }
+  if (need > 6) out.innerHTML = `<strong class="fail">pas atteignable</strong> avec une seule note.`;
   else if (need <= 1) out.innerHTML = `<strong class="pass">c'est assuré</strong>, même avec un 1.`;
   else out.innerHTML = `il te faut au moins <strong>${(Math.ceil(need * 10 - 1e-9) / 10).toFixed(1)}</strong>`;
 }
@@ -714,9 +714,9 @@ function updateSim(){
 const domTarget = s => s.goal != null ? s.goal : (S.settings.goal != null ? S.settings.goal : 4);
 function needGrade(s, where, coef, T){
   const st = { where, coef: String(coef) };
-  const f1 = hypo(s, st, 1), f6 = hypo(s, st, 6);
-  if (f1 == null || f6 == null || Math.abs(f6 - f1) < 1e-9) return null;
-  return 1 + (T - f1) * 5 / (f6 - f1);
+  if (hypo(s, st, 1) == null) return null;
+  for (let k = 10; k <= 60; k++){ const r = hypo(s, st, k / 10); if (r != null && r >= T - 1e-9) return k / 10; }
+  return 7;
 }
 function needOptions(s){
   const o = [];
@@ -826,10 +826,6 @@ function chartHTML(){
 function setHTML(){
   const n = S.subjects.reduce((k, s) => k + s.subs.reduce((j, x) => j + x.evals.length, 0), 0);
   return `<header class="phead"><h1 class="ptitle">Réglages</h1><p class="psub">Affichage, objectif et sauvegarde de tes notes</p></header>
-  <h2 class="sec">Affichage des moyennes</h2>
-  <div class="list"><div class="seg" role="group" aria-label="Décimales">
-    <button data-dec="1" class="${S.settings.dec === 1 ? "on" : ""}">Comme l'école (4.7)</button>
-    <button data-dec="2" class="${S.settings.dec === 2 ? "on" : ""}">Précis (4.71)</button></div></div>
   <h2 class="sec">Objectif</h2>
   <div class="list"><button class="srow" data-act="goal"><span class="lead">${ic("target")}</span><span class="stext">Moyenne générale visée</span><span class="val">${S.settings.goal != null ? fg(S.settings.goal) : "aucun"}</span>${ic("chev", "chev")}</button></div>
   <h2 class="sec">Sauvegarde</h2>
