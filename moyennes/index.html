@@ -304,7 +304,8 @@
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;margin-top:-9px;border-radius:50%;background:var(--surface);border:3px solid var(--plan);box-shadow:0 2px 8px rgba(16,24,40,.25)}
   input[type=range]::-moz-range-track{height:8px;border-radius:99px;background:var(--rail)}
   input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--surface);border:3px solid var(--plan)}
-  .sres{font-size:15.5px;color:var(--ink-2)}
+  .sres{font-size:15px;color:var(--ink-2);display:flex;flex-direction:column;gap:6px}
+  .sres-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
   .sres strong,.needout strong{font-family:var(--num);font-size:22px;font-weight:750;color:var(--ink)}
   .sres strong.pass{color:var(--pass)} .sres strong.fail{color:var(--fail)} .needout strong.pass{color:var(--pass)} .needout strong.fail{color:var(--fail)}
   .need{margin-top:18px;padding-top:18px;border-top:1px solid var(--border);display:grid;grid-template-columns:104px 1fr;gap:12px;align-items:end}
@@ -692,7 +693,13 @@ function updateSim(){
   const s = findDom(nav.dom); const st = s && sim[s.id]; if (!st || !$("#simRes")) return;
   const r = hypo(s, st, st.x);
   $("#simX").textContent = fg(st.x);
-  $("#simRes").innerHTML = `ta moyenne du domaine passe à <strong class="${tone(r)}">${fx(r, 2)}</strong>`;
+  let subLine = "";
+  if (st.where !== "exam"){
+    const x = s.subs.find(y => y.id === st.where);
+    if (x){ const c = clone(x), w = num(st.coef); c.evals.push({ v: st.x, w: w > 0 ? w : 1, f: true, ne: false }); const sa = subAvg(c, true);
+      subLine = `<span class="sres-row"><span>${esc(x.name)} passe à</span><strong class="${tone(sa)}">${fx(sa, 2)}</strong></span>`; }
+  }
+  $("#simRes").innerHTML = subLine + `<span class="sres-row"><span>Moyenne du domaine${s.exam.on && examVal(s, true) == null && st.where !== "exam" ? " (sans examen)" : ""}</span><strong class="${tone(r)}">${fx(r, 2)}</strong></span>`;
   const out = $("#simNeed"), T = num(st.target);
   if (!(T >= 1 && T <= 6)){ out.textContent = "Entre une moyenne entre 1 et 6."; return; }
   const f1 = hypo(s, st, 1), f6 = hypo(s, st, 6);
