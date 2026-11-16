@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Moyennes">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<title>Mes moyennes</title>
+<style>
+  :root{
+    --bg:#f2f2f7;--card:#fff;--text:#111;--muted:#6e6e73;--line:#e5e5ea;
+    --accent:#0a7cff;--ok:#1f9d55;--bad:#e5484d;--fut:#7c4dff;--futbg:rgba(124,77,255,.08);
+    --field:#f2f2f7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#000;--card:#1c1c1e;--text:#f2f2f7;--muted:#98989f;--line:#2c2c2e;
+      --accent:#0a84ff;--ok:#30d158;--bad:#ff6961;--fut:#bf8cff;--futbg:rgba(191,140,255,.12);
+      --field:#2c2c2e;
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  #app{max-width:520px;margin:0 auto;
+    padding:calc(18px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+  .backup{display:block;margin:28px auto 0;color:var(--muted);font-size:14px;text-decoration:underline}
+  textarea.field{width:100%;min-height:120px;font-size:13px;font-family:ui-monospace,Menlo,monospace;resize:vertical}
+  button,input{font:inherit;color:inherit}
+  button{cursor:pointer;border:0;background:none;padding:0}
+  .num,.big,.chip,.avg,.favg{font-variant-numeric:tabular-nums}
+
+  .hd-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:0}
+  h2{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:4px 0 14px;word-break:break-word}
+  h3{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:22px 4px 8px}
+  .sync{font-size:12px;color:var(--muted);white-space:nowrap}
+
+  .hero{background:var(--card);border-radius:20px;padding:20px;text-align:center;margin-bottom:18px}
+  .label{font-size:13px;color:var(--muted);font-weight:500}
+  .big{font-size:60px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:4px 0 2px}
+  .round{font-size:13px;color:var(--muted)}
+  .future{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--futbg);color:var(--fut);font-size:15px}
+  .future b{font-size:18px}
+  .ok{color:var(--ok)} .bad{color:var(--bad)}
+
+  .list{display:flex;flex-direction:column;gap:8px}
+  .card{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
+    background:var(--card);border-radius:16px;padding:14px 16px;text-align:left}
+  .card:active{opacity:.7}
+  .name{font-size:17px;font-weight:600;word-break:break-word}
+  .meta{font-size:13px;color:var(--muted);margin-top:2px}
+  .card-avg{text-align:right;flex-shrink:0}
+  .avg{font-size:22px;font-weight:700}
+  .favg{font-size:13px;color:var(--fut);font-weight:600}
+  .empty{background:var(--card);border-radius:16px;padding:22px 18px;color:var(--muted);text-align:center;font-size:15px;line-height:1.45}
+
+  .inline-form{display:flex;gap:8px;margin-top:12px}
+  .field{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:17px;outline:none}
+  .panel .field{background:var(--field);border-color:transparent}
+  .field:focus{border-color:var(--accent)}
+  .btn{background:var(--accent);color:#fff;border-radius:12px;padding:12px 16px;font-size:17px;font-weight:600}
+  .btn:active{opacity:.8}
+  .btn.ghost{background:var(--field);color:var(--text)}
+  .btn.danger{background:transparent;color:var(--bad)}
+  .btn.danger.armed{background:var(--bad);color:#fff}
+  .btn.full{width:100%}
+
+  .subhead{display:flex;justify-content:space-between;align-items:center}
+  .link{color:var(--accent);font-size:17px;padding:6px 0}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .stat{background:var(--card);border-radius:16px;padding:14px;text-align:center}
+  .stat .num{font-size:34px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
+  .stat.fut .label,.stat.fut .num{color:var(--fut)}
+  .stat .round{font-size:12px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--card);border-radius:12px;padding:9px 13px;font-size:18px;font-weight:700;border:1.5px solid transparent}
+  .chip small{font-size:12px;font-weight:500;color:var(--muted);margin-left:3px}
+  .chip.f{border:1.5px dashed var(--fut);color:var(--fut);background:var(--futbg)}
+  .chip:active{opacity:.7}
+  .none{font-size:14px;color:var(--muted);padding:2px 4px}
+
+  .panel{background:var(--card);border-radius:16px;padding:14px;margin-top:8px}
+  .row{display:flex;gap:8px}
+  .row label{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:500}
+  .row label.small{flex:0 0 32%}
+  .seg{display:flex;background:var(--field);border-radius:10px;padding:3px;margin:10px 0}
+  .seg button{flex:1;padding:8px;border-radius:8px;font-size:15px;font-weight:500;color:var(--muted)}
+  .seg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .seg button.on.fbtn{color:var(--fut)}
+  .err{color:var(--bad);font-size:14px;min-height:0;margin-top:6px}
+  .err:empty{display:none}
+  .need{margin-top:12px;font-size:15px;line-height:1.45}
+  .need b{font-size:22px}
+  .hint{font-size:13px;color:var(--muted);margin-top:6px}
+
+  .sheet{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center}
+  .sheet.hidden{display:none}
+  .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}
+  .sheet-body{position:relative;width:100%;max-width:520px;background:var(--card);border-radius:20px 20px 0 0;
+    padding:18px 16px calc(28px + env(safe-area-inset-bottom));animation:up .2s ease-out}
+  @keyframes up{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
+  .sheet-body h3{margin-top:0}
+  .sheet-actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hd-row"><h1>Mes moyennes</h1></div>
+  <main id="view"></main>
+</div>
+<div id="sheet" class="sheet hidden"><div class="backdrop" data-act="close"></div><div class="sheet-body" id="sheetBody"></div></div>
+
+<script>
+(function(){
+  "use strict";
+  const LS_KEY = "moyennes-v1";
+  let data = { subjects: [], updatedAt: 0 };
+  let view = { name: "home" };
+  let addKind = "real";       // remembered kind for the add form
+  let addCoef = "1";
+  let target = "4", nextCoef = "1";
+
+  const $ = (s, el=document) => el.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const num = s => { const n = parseFloat(String(s).replace(",", ".").trim()); return isFinite(n) ? n : NaN; };
+  const fmt = x => (x == null || !isFinite(x)) ? "—" : x.toFixed(2);
+  const fmtG = x => String(Math.round(x * 100) / 100);
+  const half = x => Math.round(x * 2) / 2;
+  const cls = x => (x == null || !isFinite(x)) ? "" : (x >= 4 ? "ok" : "bad");
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const valid = d => d && Array.isArray(d.subjects);
+
+  /* ---------- storage ---------- */
+  function loadLocal(){
+    try { const s = localStorage.getItem(LS_KEY); if (s) { const d = JSON.parse(s); if (valid(d)) data = d; } } catch(e){}
+  }
+  function saveLocal(){ try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e){} }
+  function persist(){ data.updatedAt = Date.now(); saveLocal(); }
+
+  /* ---------- maths ---------- */
+  function wavg(list){
+    let s = 0, w = 0;
+    for (const g of list){ s += g.v * g.w; w += g.w; }
+    return w > 0 ? s / w : null;
+  }
+  function subjStats(sub){
+    const real = sub.grades.filter(g => !g.f);
+    const all = sub.grades;
+    return { cur: wavg(real), fut: wavg(all), nReal: real.length, nFut: all.length - real.length };
+  }
+  function general(){
+    const cur = [], fut = [];
+    for (const s of data.subjects){
+      const st = subjStats(s);
+      if (st.cur != null) cur.push(st.cur);
+      if (st.fut != null) fut.push(st.fut);
+    }
+    const m = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+    return { cur: m(cur), fut: m(fut), hasFut: data.subjects.some(s => s.grades.some(g => g.f)) };
+  }
+
+  /* ---------- views ---------- */
+  function render(){
+    if (view.name === "subject" && !data.subjects.find(s => s.id === view.id)) view = { name: "home" };
+    $("#view").innerHTML = view.name === "home" ? homeHTML() : subjectHTML(data.subjects.find(s => s.id === view.id));
+    if (view.name === "subject") updateNeed();
+  }
+
+  function homeHTML(){
+    const g = general();
+    let h = `<section class="hero">
+      <div class="label">Moyenne générale</div>
+      <div class="big ${cls(g.cur)}">${fmt(g.cur)}</div>
+      ${g.cur != null ? `<div class="round">Arrondi au demi : ${half(g.cur)}</div>` : ``}
+      ${g.hasFut && g.fut != null ? `<div class="future">Avec notes futures : <b>${fmt(g.fut)}</b>${deltaHTML(g.cur, g.fut)}</div>` : ``}
+    </section>`;
+    if (!data.subjects.length){
+      h += `<div class="empty">Ajoute ta première branche (Maths, Français, Compta…), puis entre tes notes dedans.</div>`;
+    } else {
+      h += `<div class="list">` + data.subjects.map(s => {
+        const st = subjStats(s);
+        const meta = st.nReal + (st.nReal > 1 ? " notes" : " note") + (st.nFut ? ` · ${st.nFut} future${st.nFut > 1 ? "s" : ""}` : "");
+        return `<button class="card" data-open="${s.id}">
+          <div><div class="name">${esc(s.name)}</div><div class="meta">${meta}</div></div>
+          <div class="card-avg"><div class="avg ${cls(st.cur)}">${fmt(st.cur)}</div>
+          ${st.nFut ? `<div class="favg">→ ${fmt(st.fut)}</div>` : ``}</div>
+        </button>`;
+      }).join("") + `</div>`;
+    }
+    h += `<form class="inline-form" id="addSubject" autocomplete="off">
+      <input class="field" id="subName" placeholder="Nouvelle branche" maxlength="40">
+      <button class="btn" type="submit">Ajouter</button>
+    </form>
+    <button class="backup" data-act="backup">Sauvegarder / restaurer mes notes</button>`;
+    return h;
+  }
+
+  function deltaHTML(a, b){
+    if (a == null || b == null) return "";
+    const d = b - a;
+    if (Math.abs(d) < 0.005) return ` <span>(=)</span>`;
+    return ` <span>(${d > 0 ? "+" : ""}${d.toFixed(2)})</span>`;
+  }
+
+  function subjectHTML(s){
+    const st = subjStats(s);
+    const real = s.grades.filter(g => !g.f), fut = s.grades.filter(g => g.f);
+    const chip = g => `<button class="chip ${g.f ? "f" : cls(g.v)}" data-grade="${g.id}">${fmtG(g.v)}${g.w !== 1 ? `<small>×${fmtG(g.w)}</small>` : ``}</button>`;
+    return `
+      <div class="subhead"><button class="link" data-act="back">‹ Retour</button><button class="link" data-act="editSubject">Modifier</button></div>
+      <h2>${esc(s.name)}</h2>
+      <section class="stats">
+        <div class="stat"><div class="label">Moyenne actuelle</div><div class="num ${cls(st.cur)}">${fmt(st.cur)}</div>
+          ${st.cur != null ? `<div class="round">au demi : ${half(st.cur)}</div>` : ``}</div>
+        <div class="stat fut"><div class="label">Avec notes futures</div><div class="num">${st.nFut ? fmt(st.fut) : "—"}</div>
+          ${st.nFut && st.fut != null ? `<div class="round">au demi : ${half(st.fut)}</div>` : ``}</div>
+      </section>
+
+      <h3>Notes</h3>
+      <div class="chips">${real.length ? real.map(chip).join("") : `<div class="none">Aucune note pour l'instant.</div>`}</div>
+      ${fut.length ? `<h3>Notes futures</h3><div class="chips">${fut.map(chip).join("")}</div>` : ``}
+
+      <h3>Ajouter</h3>
+      <form class="panel" id="addGrade" autocomplete="off">
+        <div class="row">
+          <label>Note (1 à 6)<input class="field" id="gv" inputmode="decimal" placeholder="4.5"></label>
+          <label class="small">Coef.<input class="field" id="gw" inputmode="decimal" value="${esc(addCoef)}"></label>
+        </div>
+        <div class="seg">
+          <button type="button" data-kind="real" class="${addKind === "real" ? "on" : ""}">Note réelle</button>
+          <button type="button" data-kind="future" class="fbtn ${addKind === "future" ? "on" : ""}">Note future</button>
+        </div>
+        <button class="btn full" type="submit">Ajouter la note</button>
+        <div class="err" id="gerr"></div>
+      </form>
+
+      <h3>Quelle note me faut-il ?</h3>
+      <section class="panel">
+        <div class="row">
+          <label>Moyenne visée<input class="field" id="tg" inputmode="decimal" value="${esc(target)}"></label>
+          <label>Coef. du prochain test<input class="field" id="tc" inputmode="decimal" value="${esc(nextCoef)}"></label>
+        </div>
+        <div class="need" id="needOut"></div>
+        ${fut.length ? `<div class="hint">Tes notes futures sont comptées dans le calcul.</div>` : ``}
+      </section>`;
+  }
+
+  function updateNeed(){
+    const s = data.subjects.find(x => x.id === view.id); const out = $("#needOut");
+    if (!s || !out) return;
+    const T = num(target), c = num(nextCoef);
+    if (!(T >= 1 && T <= 6) || !(c > 0)){ out.innerHTML = `<span class="hint">Entre une moyenne entre 1 et 6 et un coef. positif.</span>`; return; }
+    let S = 0, W = 0; for (const g of s.grades){ S += g.v * g.w; W += g.w; }
+    const need = (T * (W + c) - S) / c;
+    if (need > 6) out.innerHTML = `Il te faudrait <b class="bad">${need.toFixed(2)}</b><br>Pas atteignable avec une seule note.`;
+    else if (need <= 1) out.innerHTML = `<b class="ok">Objectif assuré</b><br>Même avec un 1, tu restes à ${T} ou plus.`;
+    else out.innerHTML = `Il te faut au moins <b class="${cls(need)}">${need.toFixed(2)}</b><br><span class="hint">Soit ${Math.ceil(need * 2) / 2} si les notes sont au demi.</span>`;
+  }
+
+  /* ---------- sheet (edit dialogs) ---------- */
+  let sheetState = null;
+  function openSheet(html, state){ sheetState = state; $("#sheetBody").innerHTML = html; $("#sheet").classList.remove("hidden"); }
+  function closeSheet(){ sheetState = null; $("#sheet").classList.add("hidden"); $("#sheetBody").innerHTML = ""; }
+
+  function openGradeSheet(gid){
+    const s = data.subjects.find(x => x.id === view.id); const g = s && s.grades.find(x => x.id === gid);
+    if (!g) return;
+    openSheet(`<h3>Modifier la note</h3>
+      <form id="editGrade" autocomplete="off">
+        <div class="row">
+          <label>Note<input class="field" id="ev" inputmode="decimal" value="${fmtG(g.v)}"></label>
+          <label class="small">Coef.<input class="field" id="ew" inputmode="decimal" value="${fmtG(g.w)}"></label>
+        </div>
+        <div class="seg">
+          <button type="button" data-ekind="real" class="${!g.f ? "on" : ""}">Note réelle</button>
+          <button type="button" data-ekind="future" class="fbtn ${g.f ? "on" : ""}">Note future</button>
+        </div>
+        <div class="err" id="eerr"></div>
+        <div class="sheet-actions">
+          <button class="btn full" type="submit">Enregistrer</button>
+          <button class="btn danger full" type="button" data-act="delGrade">Supprimer la note</button>
+          <button class="btn ghost full" type="button" data-act="close">Annuler</button>
+        </div>
+      </form>`, { type: "grade", gid, f: g.f, armed: false });
+  }
+
+  function openSubjectSheet(){
+    const s = data.subjects.find(x => x.id === view.id); if (!s) return;
+    openSheet(`<h3>Modifier la branche</h3>
+      <form id="editSubject" autocomplete="off">
+        <input class="field" style="width:100%" id="sn" value="${esc(s.name)}" maxlength="40">
+        <div class="sheet-actions">
+          <button class="btn full" type="submit">Renommer</button>
+          <button class="btn danger full" type="button" data-act="delSubject">Supprimer la branche</button>
+          <button class="btn ghost full" type="button" data-act="close">Annuler</button>
+        </div>
+      </form>`, { type: "subject", armed: false });
+  }
+
+  function openBackupSheet(){
+    openSheet(`<h3>Sauvegarde</h3>
+      <div class="hint" style="margin:0 0 8px">Tes notes restent sur ce téléphone. Copie ce code et garde-le (Notes, mail…). Pour restaurer, colle un code puis touche « Restaurer ».</div>
+      <textarea class="field" id="bk">${esc(JSON.stringify({subjects:data.subjects}))}</textarea>
+      <div class="err" id="bkerr"></div>
+      <div class="sheet-actions">
+        <button class="btn full" type="button" data-act="copyBackup">Copier le code</button>
+        <button class="btn ghost full" type="button" data-act="restore">Restaurer</button>
+        <button class="btn ghost full" type="button" data-act="close">Fermer</button>
+      </div>`, { type: "backup", armed: false });
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener("click", e => {
+    const t = e.target.closest("button, .backdrop"); if (!t) return;
+    if (t.dataset.open){ view = { name: "subject", id: t.dataset.open }; render(); window.scrollTo(0, 0); return; }
+    if (t.dataset.grade){ openGradeSheet(t.dataset.grade); return; }
+    if (t.dataset.kind){ addKind = t.dataset.kind; t.parentNode.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === t)); return; }
+    if (t.dataset.ekind && sheetState){ sheetState.f = t.dataset.ekind === "future"; t.parentNode.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === t)); return; }
+    const act = t.dataset.act;
+    if (act === "back"){ view = { name: "home" }; render(); window.scrollTo(0, 0); }
+    else if (act === "close"){ closeSheet(); }
+    else if (act === "editSubject"){ openSubjectSheet(); }
+    else if (act === "backup"){ openBackupSheet(); }
+    else if (act === "copyBackup"){
+      const ta = $("#bk"); const txt = ta.value;
+      const done = () => { t.textContent = "Copié ✓"; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => { ta.select(); document.execCommand("copy"); done(); });
+      else { ta.select(); document.execCommand("copy"); done(); }
+    }
+    else if (act === "restore" && sheetState){
+      let d; try { d = JSON.parse($("#bk").value); } catch(_){ d = null; }
+      if (!valid(d) || !d.subjects.every(x => x && typeof x.name === "string" && Array.isArray(x.grades))){ $("#bkerr").textContent = "Code invalide."; return; }
+      if (!sheetState.armed){ sheetState.armed = true; t.classList.add("armed"); t.classList.add("danger"); t.textContent = "Confirmer (remplace tes notes actuelles)"; return; }
+      data = { subjects: d.subjects.map(x => ({ id: x.id || uid(), name: x.name, grades: x.grades.filter(g => isFinite(g.v) && isFinite(g.w)).map(g => ({ id: g.id || uid(), v: +g.v, w: +g.w, f: !!g.f })) })) };
+      view = { name: "home" }; persist(); closeSheet(); render();
+    }
+    else if (act === "delGrade" && sheetState){
+      if (!sheetState.armed){ sheetState.armed = true; t.classList.add("armed"); t.textContent = "Confirmer la suppression"; return; }
+      const s = data.subjects.find(x => x.id === view.id);
+      s.grades = s.grades.filter(g => g.id !== sheetState.gid);
+      persist(); closeSheet(); render();
+    }
+    else if (act === "delSubject" && sheetState){
+      if (!sheetState.armed){ sheetState.armed = true; t.classList.add("armed"); t.textContent = "Confirmer (supprime aussi ses notes)"; return; }
+      data.subjects = data.subjects.filter(x => x.id !== view.id);
+      view = { name: "home" }; persist(); closeSheet(); render();
+    }
+  });
+
+  document.addEventListener("submit", e => {
+    e.preventDefault();
+    const f = e.target;
+    if (f.id === "addSubject"){
+      const name = $("#subName").value.trim(); if (!name) return;
+      data.subjects.push({ id: uid(), name, grades: [] });
+      persist(); render();
+    }
+    else if (f.id === "addGrade"){
+      const v = num($("#gv").value), w = num($("#gw").value);
+      const err = $("#gerr");
+      if (!(v >= 1 && v <= 6)){ err.textContent = "La note doit être entre 1 et 6."; return; }
+      if (!(w > 0 && w <= 100)){ err.textContent = "Le coef. doit être un nombre positif."; return; }
+      addCoef = $("#gw").value;
+      const s = data.subjects.find(x => x.id === view.id);
+      s.grades.push({ id: uid(), v, w, f: addKind === "future" });
+      persist(); render();
+      const gv = $("#gv"); if (gv) gv.focus();
+    }
+    else if (f.id === "editGrade" && sheetState){
+      const v = num($("#ev").value), w = num($("#ew").value);
+      if (!(v >= 1 && v <= 6)){ $("#eerr").textContent = "La note doit être entre 1 et 6."; return; }
+      if (!(w > 0 && w <= 100)){ $("#eerr").textContent = "Le coef. doit être un nombre positif."; return; }
+      const s = data.subjects.find(x => x.id === view.id);
+      const g = s.grades.find(x => x.id === sheetState.gid);
+      g.v = v; g.w = w; g.f = sheetState.f;
+      persist(); closeSheet(); render();
+    }
+    else if (f.id === "editSubject"){
+      const name = $("#sn").value.trim(); if (!name) return;
+      const s = data.subjects.find(x => x.id === view.id); s.name = name;
+      persist(); closeSheet(); render();
+    }
+  });
+
+  document.addEventListener("input", e => {
+    if (e.target.id === "tg"){ target = e.target.value; updateNeed(); }
+    else if (e.target.id === "tc"){ nextCoef = e.target.value; updateNeed(); }
+    else if (e.target.id === "gv" || e.target.id === "gw"){ const er = $("#gerr"); if (er) er.textContent = ""; }
+  });
+
+  loadLocal();
+  render();
+})();
+</script>
+</body>
+</html>
